@@ -1,9 +1,10 @@
 <script lang="ts">
   import { ICN_CHAPTERS, ICN_PARTS } from '../../lib/icn/content';
-  import { chapterHref } from '../../lib/books';
+  import { bookById, chapterHref } from '../../lib/books';
   import { navigate } from '../../lib/router.svelte';
   import { lang, t } from '../../lib/lang.svelte';
 
+  const book = bookById('interconnection-networks')!;
   const ready = ICN_CHAPTERS.filter((c) => c.status === 'ready');
   const open = (slug: string) => navigate(`/book/interconnection-networks/${slug}`);
 </script>
@@ -15,7 +16,12 @@
       <span class="lib-line"></span>
       <span class="lib-text">{t('可视化书库 · 第三本', 'Book 03 · Interconnection Networks')}</span>
     </div>
-    <div class="hero-kicker eyebrow">Interconnection Networks · An Engineering Approach</div>
+    <div class="source-line">
+      <span class="sl-tag">{t('原书', 'Source')}</span>
+      <span class="sl-title">{book.origin}</span>
+      {#if lang.value !== 'en' && book.originZh}<span class="sl-zh">{book.originZh}</span>{/if}
+      <span class="sl-meta">{book.authors} · {lang.value === 'en' ? book.editionEn ?? book.edition : book.edition}</span>
+    </div>
     <h1 class="display">Deadlock<span class="times">×</span><br class="hero-break" />Routing</h1>
     <p class="hero-sub">
       {#if lang.value === 'en'}
@@ -202,10 +208,6 @@
     font-size: 9.5px;
     letter-spacing: 0.04em;
     color: var(--muted);
-  }
-
-  .hero-kicker {
-    color: var(--gold);
   }
 
   .hero h1 {

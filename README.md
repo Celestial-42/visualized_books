@@ -63,7 +63,7 @@ src/
 
 ## 新增一本书
 
-1. `src/lib/books.ts`：在 `BookId` 中加入新 id，并在 `BOOKS` 里补一条元数据（`no`、`title`、`titleEn`、`spine`、`authors`、`edition`、`pages`、`parts`、`chapters`）。
+1. `src/lib/books.ts`：在 `BookId` 中加入新 id，并在 `BOOKS` 里补一条元数据（`no`、`title`、`titleEn`、`spine`、`origin`（原书书名，会显示在书目页与每章页首）、`originZh`（若依据中文版）、`authors`、`edition` / `editionEn`、`pages`、`parts`、`chapters`）。
 2. `src/lib/<book>/content.ts`：定义 `PARTS` 与 `CHAPTERS`（`n`、`slug`、`title`、`status`、`pages`、`blurb`），`status: 'ready'` 的章节才会出现在目录与进度里。
 3. `src/lib/<book>/*.ts`：放这一本书的计算引擎，写成纯函数，便于在页面、测验和脚本里复用。
 4. `src/pages/<book>/Home.svelte` 与 `ChX.svelte`：目录页与章节页；在 `src/App.svelte` 的 `PAGES` 表中登记 `"<bookId>/<slug>"`。

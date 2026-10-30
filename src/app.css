@@ -124,6 +124,60 @@ a:hover {
   color: var(--muted);
 }
 
+/* ---------- source-book line ---------- */
+/* "原书 · original title · authors · edition", shared by book heroes and chapter heads. */
+.source-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 8px;
+  font-size: 10.5px;
+  line-height: 1.65;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.source-line .sl-tag {
+  padding: 1px 6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.source-line .sl-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--ink-3);
+  transition: color 0.25s var(--ease);
+}
+
+a.source-line:hover .sl-title {
+  color: var(--ink-2);
+}
+
+.source-line .sl-zh {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.source-line .sl-meta {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+}
+
+@media (max-width: 560px) {
+  .source-line .sl-meta {
+    flex-basis: 100%;
+  }
+}
+
 .tnum {
   font-variant-numeric: tabular-nums;
 }

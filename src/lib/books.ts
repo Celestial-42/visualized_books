@@ -14,8 +14,13 @@ export type Book = {
   spine: string;
   short: string;
   shortEn: string;
+  /** Original title of the source book, in the language it was published in. */
+  origin: string;
+  /** Chinese edition title, when the pages follow a translation rather than the original. */
+  originZh?: string;
   authors: string;
   edition: string;
+  editionEn?: string;
   pages: string;
   parts: Part[];
   chapters: Chapter[];
@@ -30,6 +35,7 @@ export const BOOKS: Book[] = [
     spine: 'Consistency × Coherence',
     short: '内存连贯性',
     shortEn: 'Consistency & Coherence',
+    origin: 'A Primer on Memory Consistency and Cache Coherence',
     authors: 'Sorin · Nagarajan · Hill · Wood',
     edition: '2nd edition · 2020',
     pages: '296',
@@ -44,6 +50,7 @@ export const BOOKS: Book[] = [
     spine: 'Topology × Flow',
     short: '片上网络',
     shortEn: 'On-Chip Networks',
+    origin: 'On-Chip Networks',
     authors: 'Enright Jerger · Krishna · Peh',
     edition: '2nd edition · 2017',
     pages: '142',
@@ -58,8 +65,11 @@ export const BOOKS: Book[] = [
     spine: 'Deadlock × Routing',
     short: '一种工程方法',
     shortEn: 'An Engineering Approach',
+    origin: 'Interconnection Networks: An Engineering Approach',
+    originZh: '并行计算机互连网络技术——一种工程方法',
     authors: 'Duato · Yalamanchili · Ni',
     edition: '中文版 · 2004',
+    editionEn: 'Chinese edition · 2004',
     pages: '400',
     parts: ICN_PARTS,
     chapters: ICN_CHAPTERS

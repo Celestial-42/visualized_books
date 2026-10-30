@@ -1,9 +1,10 @@
 <script lang="ts">
   import { OCN_CHAPTERS, OCN_PARTS } from '../../lib/noc/content';
-  import { chapterHref } from '../../lib/books';
+  import { bookById, chapterHref } from '../../lib/books';
   import { navigate } from '../../lib/router.svelte';
   import { lang, t } from '../../lib/lang.svelte';
 
+  const book = bookById('on-chip-networks')!;
   const readyCount = OCN_CHAPTERS.filter((c) => c.status === 'ready').length;
   const open = (slug: string) => navigate(`/book/on-chip-networks/${slug}`);
 </script>
@@ -15,7 +16,11 @@
       <span class="lib-line"></span>
       <span class="lib-text">{t('可视化书库 · 第二本', 'Book 02 · On-Chip Networks')}</span>
     </div>
-    <div class="hero-kicker eyebrow">On-Chip Networks · Second Edition · 2017</div>
+    <div class="source-line">
+      <span class="sl-tag">{t('原书', 'Source')}</span>
+      <span class="sl-title">{book.origin}</span>
+      <span class="sl-meta">{book.authors} · {lang.value === 'en' ? book.editionEn ?? book.edition : book.edition}</span>
+    </div>
     <h1 class="display">Topology<span class="times">×</span><br class="hero-break" />Flow</h1>
     <p class="hero-sub">
       {#if lang.value === 'en'}
@@ -208,10 +213,6 @@
     font-size: 9.5px;
     letter-spacing: 0.04em;
     color: var(--muted);
-  }
-
-  .hero-kicker {
-    color: var(--gold);
   }
 
   .hero h1 {

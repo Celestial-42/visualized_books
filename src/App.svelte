@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Component } from 'svelte';
+  import { setContext } from 'svelte';
   import SiteRail from './components/SiteRail.svelte';
   import LibraryHome from './pages/LibraryHome.svelte';
   import Home from './pages/Home.svelte';
@@ -26,12 +27,19 @@
   import Ocn8 from './pages/ocn/Ch8.svelte';
   import Icn3 from './pages/icn/Ch3.svelte';
   import Icn4 from './pages/icn/Ch4.svelte';
-  import { parseRoute } from './lib/books';
+  import { parseRoute, type Book } from './lib/books';
   import { router } from './lib/router.svelte';
   import { markVisited } from './lib/progress.svelte';
   import { t } from './lib/lang.svelte';
 
   const route = $derived(parseRoute(router.path));
+
+  // Chapter heads show which source book the page belongs to.
+  const bookCtx = $state<{ book: Book | null }>({ book: null });
+  setContext('book', bookCtx);
+  $effect(() => {
+    bookCtx.book = route.kind === 'chapter' || route.kind === 'book' ? route.book : null;
+  });
 
   const PAGES: Record<string, Component> = {
     'memory-primer/ch1': Ch1,

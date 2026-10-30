@@ -1,9 +1,10 @@
 <script lang="ts">
   import { CHAPTERS, PARTS } from '../lib/content';
-  import { chapterHref } from '../lib/books';
+  import { bookById, chapterHref } from '../lib/books';
   import { navigate } from '../lib/router.svelte';
   import { lang, t } from '../lib/lang.svelte';
 
+  const book = bookById('memory-primer')!;
   const readyCount = CHAPTERS.filter((c) => c.status === 'ready').length;
   const open = (slug: string) => navigate(`/book/memory-primer/${slug}`);
 </script>
@@ -15,7 +16,11 @@
       <span class="lib-line"></span>
       <span class="lib-text">{t('可视化书库 · 第一本', 'Book 01 · Shared Memory Atlas')}</span>
     </div>
-    <div class="hero-kicker eyebrow">A Primer on Memory Consistency and Cache Coherence · 2nd Edition</div>
+    <div class="source-line">
+      <span class="sl-tag">{t('原书', 'Source')}</span>
+      <span class="sl-title">{book.origin}</span>
+      <span class="sl-meta">{book.authors} · {lang.value === 'en' ? book.editionEn ?? book.edition : book.edition}</span>
+    </div>
     <h1 class="display">Consistency<span class="times">×</span><br class="hero-break" />Coherence</h1>
     <p class="hero-sub">
       {#if lang.value === 'en'}
@@ -220,10 +225,6 @@
     font-size: 9.5px;
     letter-spacing: 0.04em;
     color: var(--muted);
-  }
-
-  .hero-kicker {
-    color: var(--gold);
   }
 
   .hero h1 {
