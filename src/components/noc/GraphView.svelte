@@ -38,8 +38,8 @@
       y2={graph.pos[b].y}
       class="link"
       class:loaded={h > 0}
-      stroke-width={0.45 + h * 1.7}
-      opacity={heat ? 0.25 + h * 0.75 : 1}
+      stroke-width={0.5 + h * 2.6}
+      opacity={heat ? 0.18 + h * 0.82 : 1}
     />
   {/each}
 

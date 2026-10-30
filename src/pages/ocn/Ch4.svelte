@@ -31,7 +31,7 @@
     />
 
     <div class="prose">
-      <h3><span class="h-no">4.1</span>{t('三类路由', 'Three families')}</h3>
+      <h3><span class="h-no">4.1</span>{t('三类路由，五种算法', 'Three families, five algorithms')}</h3>
       {#if en}
         <p>
           <b>Deterministic</b> routing computes the path from the source and destination alone: the same pair always
@@ -62,13 +62,70 @@
           自适应正是把拓扑的路径多样性变成吞吐的东西——也是让死锁分析变难的东西。
         </p>
       {/if}
+
+      <div class="table-wrap">
+        <table class="table algo-table">
+        <thead>
+          <tr>
+            <th>{t('算法', 'Algorithm')}</th>
+            <th>{t('怎么选路', 'How it picks')}</th>
+            <th>{t('跳数', 'Hops')}</th>
+            <th>{t('死锁', 'Deadlock')}</th>
+            <th>{t('买到了什么', 'What it buys')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">XY</td>
+            <td>{t('先把 X 走完，再走 Y', 'All X, then all Y')}</td>
+            <td>{t('最小', 'minimal')}</td>
+            <td>{t('无环（4 个转向）', 'acyclic (4 turns)')}</td>
+            <td>{t('最简单的实现', 'the simplest logic')}</td>
+          </tr>
+          <tr>
+            <td class="mono">YX</td>
+            <td>{t('先把 Y 走完，再走 X', 'All Y, then all X')}</td>
+            <td>{t('最小', 'minimal')}</td>
+            <td>{t('无环（4 个转向）', 'acyclic (4 turns)')}</td>
+            <td>{t('与 XY 对称，换一维先吃拥塞', 'XY’s mirror; the other dimension absorbs congestion first')}</td>
+          </tr>
+          <tr>
+            <td class="mono">West-first</td>
+            <td>{t('往西先走完，其余三个方向自适应', 'West first, then adapt among the other three')}</td>
+            <td>{t('最小', 'minimal')}</td>
+            <td>{t('无环（另一组 4 个转向）', 'acyclic (a different 4 turns)')}</td>
+            <td>{t('非均匀流量下的一点均衡', 'some balance under skewed traffic')}</td>
+          </tr>
+          <tr>
+            <td class="mono">Valiant</td>
+            <td>{t('先到中间节点，再各自按 XY 走', 'Via an intermediate node, XY on each leg')}</td>
+            <td>{t('非最小（明显变多）', 'non-minimal (clearly more)')}</td>
+            <td>{t('每段无环，整体仍安全', 'each leg acyclic, so still safe')}</td>
+            <td>{t('不看拥塞也能把热点摊开', 'spreads hotspots without looking at them')}</td>
+          </tr>
+          <tr>
+            <td class="mono">{t('最小自适应', 'Minimal adaptive')}</td>
+            <td>{t('在 XY / YX（或更多转向）里按链路负载挑', 'Choose among XY / YX (or more turns) by link load')}</td>
+            <td>{t('最小', 'minimal')}</td>
+            <td>{t('需要受限转向或 VC', 'needs restricted turns or VCs')}</td>
+            <td>{t('跟着热点换路，吞吐更高', 'paths follow the hotspots; higher throughput')}</td>
+          </tr>
+        </tbody>
+        </table>
+      </div>
+      <p class="table-note">
+        {t(
+          '关键在于“跳数”和“看不看拥塞”是两件独立的事：Valiant 不看拥塞却主动加跳，自适应看拥塞但不加跳。',
+          'The point is that “hop count” and “does it look at congestion” are independent: Valiant ignores congestion and adds hops anyway, while adaptive reads congestion and adds none.'
+        )}
+      </p>
     </div>
 
     <Figure
       no={t('图 4.1', 'Figure 4.1')}
       caption={t(
-        '同一对端点，五种算法的实际路径。Valiant 会先绕到一个中间节点，跳数立刻变多；最小自适应在 XY 与 YX 两条最短路里挑更空的那条，右上角同步显示源路由头（每跳一个方向）。',
-        'The same endpoints under five algorithms. Valiant detours through an intermediate node and pays hops immediately; minimal adaptive picks the emptier of the two shortest paths, and the header readout shows the source-route directions.'
+        '同一对端点，五种算法的实际路径与决策依据。Valiant 会绕到最远的中间节点，跳数立刻变多；最小自适应会把 XY/YX 两条候选一起画出来、显示各自的链路负载之和，默认还假设链路 5→6 被打满，于是你能看到它为什么避开这条路。',
+        'The same endpoints under five algorithms, with the reasoning on screen. Valiant detours through the farthest intermediate node and pays hops; minimal adaptive draws both XY and YX candidates with each one’s summed link load, and by default assumes link 5→6 is hammered — so you can see why it avoids it.'
       )}
     >
       <RouteLab />
@@ -323,6 +380,28 @@
 </div>
 
 <style>
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 18px;
+  }
+
+  .algo-table {
+    margin-top: 0;
+    min-width: 560px;
+  }
+
+  .algo-table td:first-child {
+    white-space: nowrap;
+    color: var(--accent-deep);
+  }
+
+  .table-note {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
   .mc {
     display: flex;
     flex-direction: column;

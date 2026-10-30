@@ -101,23 +101,26 @@ export const westFirstPath = (g: Graph, s: number, t: number): number[] => {
   return out;
 };
 
-/** Valiant: detour through an intermediate node that is off the shortest path. */
-export const valiantPath = (g: Graph, s: number, t: number): number[] => {
+/** Valiant: detour through the intermediate node that costs the most hops. */
+export const valiantRoute = (g: Graph, s: number, t: number): { path: number[]; mid: number } => {
   const direct = xyPath(g, s, t).length - 1;
-  const start = Math.abs((s * 73856093) ^ (t * 19349663)) % g.n;
-  let mid = -1;
-  for (let i = 0; i < g.n; i++) {
-    const c = (start + i) % g.n;
-    if (c === s || c === t) continue;
-    const cost = xyPath(g, s, c).length + xyPath(g, c, t).length - 2;
-    if (cost > direct) {
-      mid = c;
-      break;
+  let best = -1;
+  let bestCost = -1;
+  for (let mid = 0; mid < g.n; mid++) {
+    if (mid === s || mid === t) continue;
+    const cost = xyPath(g, s, mid).length + xyPath(g, mid, t).length - 2;
+    // small deterministic bias so the reported detour is reproducible
+    const bias = ((s * 31 + t * 17 + mid * 7) % 5) / 100;
+    if (cost + bias > bestCost) {
+      bestCost = cost + bias;
+      best = mid;
     }
   }
-  if (mid < 0) return xyPath(g, s, t);
-  return [...xyPath(g, s, mid), ...xyPath(g, mid, t).slice(1)];
+  if (best < 0 || bestCost <= direct) return { path: xyPath(g, s, t), mid: -1 };
+  return { path: [...xyPath(g, s, best), ...xyPath(g, best, t).slice(1)], mid: best };
 };
+
+export const valiantPath = (g: Graph, s: number, t: number): number[] => valiantRoute(g, s, t).path;
 
 export type RoutingId = 'xy' | 'west' | 'valiant' | 'yx';
 
@@ -134,7 +137,7 @@ export const routeBy = (g: Graph, s: number, t: number, algo: RoutingId): number
   }
 };
 
-const yxPath = (g: Graph, s: number, t: number): number[] => {
+export const yxPath = (g: Graph, s: number, t: number): number[] => {
   const out = [s];
   let x = s % g.w;
   let y = Math.floor(s / g.w);
@@ -302,7 +305,12 @@ export const routingVerdictSplit = (g: Graph, plans: Turn[][]) => {
 };
 
 /** Minimal adaptive: XY and YX are both shortest on a mesh, pick the less loaded one. */
-export const adaptivePath = (g: Graph, s: number, t: number, load: Map<string, number>): { path: number[]; picked: 'xy' | 'yx' } => {
+export const adaptivePath = (
+  g: Graph,
+  s: number,
+  t: number,
+  load: Map<string, number>
+): { path: number[]; picked: 'xy' | 'yx'; xyScore: number; yxScore: number } => {
   const score = (p: number[]) => {
     let sum = 0;
     for (let i = 0; i + 1 < p.length; i++) {
@@ -313,7 +321,11 @@ export const adaptivePath = (g: Graph, s: number, t: number, load: Map<string, n
   };
   const xy = xyPath(g, s, t);
   const yx = yxPath(g, s, t);
-  return score(yx) < score(xy) ? { path: yx, picked: 'yx' } : { path: xy, picked: 'xy' };
+  const xyScore = score(xy);
+  const yxScore = score(yx);
+  return yxScore < xyScore
+    ? { path: yx, picked: 'yx', xyScore, yxScore }
+    : { path: xy, picked: 'xy', xyScore, yxScore };
 };
 
 /** The direction list a source-routed header would carry: one entry per hop. */
