@@ -1,6 +1,6 @@
 <script lang="ts">
   import GraphView from './GraphView.svelte';
-  import { profile, TRAFFICS, delayCurve, type TrafficId } from '../../lib/noc/perf';
+  import { profile, TRAFFICS, delayCurve, idealLatency, meshHopFormula, type TrafficId } from '../../lib/noc/perf';
   import { lang, t } from '../../lib/lang.svelte';
 
   type Topo = 'mesh' | 'torus' | 'ring' | 'crossbar';
@@ -20,10 +20,14 @@
   });
 
   const curve = $derived(delayCurve(p.baseLatency));
-  const maxLat = $derived(Math.max(...curve.map((c) => c.latency)));
-  const points = $derived(curve.map((c) => `${10 + c.load * 270},${104 - (c.latency / maxLat) * 84}`).join(' '));
+  const ideal = $derived(curve.map((c) => ({ load: c.load, latency: idealLatency(p.baseLatency, c.load) })));
+  const maxLat = $derived(Math.max(...curve.map((c) => c.latency), ...ideal.map((c) => c.latency)));
+  const toXY = (c: { load: number; latency: number }) => `${10 + c.load * 270},${104 - (c.latency / maxLat) * 84}`;
+  const points = $derived(curve.map(toXY).join(' '));
+  const idealPoints = $derived(ideal.map(toXY).join(' '));
 
   const info = $derived(TRAFFICS.find((x) => x.id === traffic) ?? TRAFFICS[0]);
+  const formula = $derived(meshHopFormula(4));
 
   const TOPOS: { id: Topo; label: string }[] = [
     { id: 'mesh', label: 'mesh 4×4' },
@@ -66,14 +70,19 @@
       <svg viewBox="0 0 290 116" fill="none" aria-hidden="true">
         <path d="M10 104H282" class="axis" />
         <path d="M10 104V12" class="axis" />
+        <polyline points={idealPoints} class="ideal" />
         <polyline points={points} class="curve" />
         <text x="146" y="114" class="axis-l" text-anchor="middle">{t('注入率 / 饱和注入率', 'load / saturation')}</text>
         <text x="6" y="10" class="axis-l">{t('延迟', 'latency')}</text>
       </svg>
+      <p class="legend">
+        <span class="sw curve-sw"></span>{t('本页模型（M/D/1）', 'this page’s model (M/D/1)')}
+        <span class="sw ideal-sw"></span>{t('纯排队理想 1/(1−ρ)', 'pure queue 1/(1−ρ)')}
+      </p>
       <p class="viz-note">
         {t(
-          '曲线由零负载延迟 + M/D/1 排队算出：到饱和点之前几乎平，靠近饱和点陡起来。',
-          'Computed from zero-load latency plus an M/D/1 queue: flat until the knee, then steep.'
+          '两条线形状一样，差在膝盖的软硬：真实网络的排队比理想队列更早“硬”起来。',
+          'Same shape, different knee: a real network stiffens earlier than the ideal queue.'
         )}
       </p>
     </div>
@@ -108,6 +117,13 @@
       `Same graph, different pattern: the busiest link sets the saturation point. Max load ${p.maxLoad.toFixed(2)} gives a saturation injection rate of ${p.saturation.toFixed(3)} packets per node per cycle.`
     )}
   </p>
+
+  {#if topo === 'mesh' && traffic === 'uniform'}
+    <p class="formula mono">
+      {t('公式校验', 'formula check')}: E|d| = 2k/3 = {formula.toFixed(3)} {t('（不含自身对）', '(distinct pairs)')} ·
+      {t('BFS 实测', 'BFS measured')} {p.metrics.avgHops.toFixed(3)}
+    </p>
+  {/if}
 </div>
 
 <style>
@@ -154,6 +170,35 @@
     stroke: var(--accent);
     stroke-width: 1.4;
     fill: none;
+  }
+
+  .ideal {
+    stroke: var(--gold);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    fill: none;
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9.5px;
+    color: var(--muted);
+  }
+
+  .sw {
+    width: 12px;
+    height: 2px;
+    border-radius: 1px;
+  }
+
+  .curve-sw {
+    background: var(--accent);
+  }
+
+  .ideal-sw {
+    background: var(--gold);
   }
 
   .axis-l {
@@ -205,6 +250,15 @@
     font-size: 11.5px;
     line-height: 1.7;
     color: var(--ink-3);
+  }
+
+  .formula {
+    padding: 7px 10px;
+    font-size: 10px;
+    line-height: 1.6;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    border-radius: 8px;
   }
 
   @media (max-width: 780px) {

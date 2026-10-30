@@ -134,11 +134,23 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">8.3</span>{t('两个反例值得记住', 'Two counter-examples worth remembering')}</h3>
+      <h3><span class="h-no">8.3</span>{t('三个反例值得记住', 'Three counter-examples worth remembering')}</h3>
       <p>
         {t(
           `Swizzle Switch 在 64 个端口上直接做一个交叉开关，用 4.5 Tb/s 证明“拓扑简单”有时能换来更大的带宽，代价是面积随端口平方增长、只能服务于特定流量。IBM Cell 则用一条四环的 ring 连接 PPE 与 SPE，因为它要连的东西本来就只有 9 个，而 ring 上的往返时间恰好适合它的流水线。`,
           `Swizzle Switch builds a single crossbar across 64 ports and reaches 4.5 Tb/s — proof that a simple topology can buy bandwidth, at the cost of area growing with the square of the port count and a narrow traffic profile. IBM Cell instead uses a four-ring interconnect for its PPE and SPEs, because it only had nine things to connect and the ring’s round trip happened to fit its pipeline.`
+        )}
+      </p>
+      <p>
+        {t(
+          `第三个反例是 MIT 的 SCORPIO：它在无序的 6×6 mesh 上做侦听一致性，靠的不是给 mesh 加 VC，而是另开一条无缓冲的广播网络专管“定序”。主网络随便乱序送数据，notification 网络用 OR 树把顺序钉死。这提醒一件事——网络不必只有一张，“搬数据的那张”和“定顺序的那张”可以分开设计，代价是两块面积与两套验证。`,
+          `A third counter-example is MIT’s SCORPIO: it runs snoopy coherence over an unordered 6×6 mesh not by adding VCs but by adding a second, bufferless broadcast network that only fixes order. The main network delivers data in any order; the notification network pins the order down with OR-trees. The lesson is that a design does not need one network — “the one that moves data” and “the one that fixes order” can be separate, at the cost of two areas and two verification stories.`
+        )}
+      </p>
+      <p>
+        {t(
+          `还有 Oracle Sparc T5：8 组 L2、8 个 L3 bank 与 IO 之间干脆一个 8×9 交叉开关（72 个终端），1 TB/s。终端只有十来个的时候，交叉开关的 P² 面积还付得起，mesh 平均几跳的延迟反而更贵。这也是第 6 章那张面积表的意义：P 小的时候，最简单的拓扑就是最便宜的。`,
+          `Then Oracle’s Sparc T5: eight L2 pairs, eight L3 banks and IO joined by a single 8×9 crossbar (72 terminals) at 1 TB/s. With only a dozen-ish endpoints the P² crossbar area is still affordable, while a mesh’s multi-hop latency is the expensive part. That is the point of the area table in Chapter 6: for small P, the simplest topology is the cheapest.`
         )}
       </p>
       <div class="note">

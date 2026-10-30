@@ -229,6 +229,103 @@ export const routingVerdict = (g: Graph, turns: Turn[]) => {
   return { cdg, cycle, safe: cycle === null };
 };
 
+/**
+ * The same turn set spread over several virtual networks. A packet may move up a
+ * VN at a turn but never back down, so each VN's turns and the escalation order
+ * together decide whether a cycle survives.
+ */
+export const buildCDGVC = (g: Graph, plans: Turn[][]): { channels: { id: string; u: number; v: number; dir: Dir; vc: number }[]; deps: number[][] } => {
+  const base = buildCDG(g, ALL_TURNS);
+  const channels = base.channels.flatMap((c, ci) =>
+    plans.map((_, vc) => ({ id: `${ci}@${vc}`, u: c.u, v: c.v, dir: c.dir, vc }))
+  );
+  const index = new Map(channels.map((c, i) => [c.id, i]));
+  const deps: number[][] = channels.map(() => []);
+  const allow = plans.map((p) => new Set(p));
+
+  for (let ci = 0; ci < base.channels.length; ci++) {
+    const a = base.channels[ci];
+    for (const w of g.adj[a.v]) {
+      const dir = dirOf(g, a.v, w);
+      if (!dir) continue;
+      const straight = dir === a.dir;
+      const turn = `${a.dir}${dir}` as Turn;
+      const nextCi = base.channels.findIndex((c) => c.u === a.v && c.v === w);
+      if (nextCi < 0) continue;
+      for (let vc = 0; vc < plans.length; vc++) {
+        for (let nvc = vc; nvc < plans.length; nvc++) {
+          if (!straight && !allow[nvc].has(turn)) continue;
+          if (nvc !== vc && !allow[nvc].has(turn)) continue;
+          const from = index.get(`${ci}@${vc}`);
+          const to = index.get(`${nextCi}@${nvc}`);
+          if (from !== undefined && to !== undefined) deps[from].push(to);
+        }
+      }
+    }
+  }
+  return { channels, deps };
+};
+
+export const findCycleVC = (cdg: { channels: { u: number; v: number; vc: number }[]; deps: number[][] }): string[] | null => {
+  const state = new Array<number>(cdg.channels.length).fill(0);
+  const stack: number[] = [];
+  const label = (i: number) => `${cdg.channels[i].u}→${cdg.channels[i].v}@VN${cdg.channels[i].vc}`;
+
+  const visit = (u: number): string[] | null => {
+    state[u] = 1;
+    stack.push(u);
+    for (const v of cdg.deps[u]) {
+      if (state[v] === 1) return stack.slice(stack.indexOf(v)).map(label);
+      if (state[v] === 0) {
+        const found = visit(v);
+        if (found) return found;
+      }
+    }
+    stack.pop();
+    state[u] = 2;
+    return null;
+  };
+
+  for (let i = 0; i < cdg.channels.length; i++) {
+    if (state[i] !== 0) continue;
+    const found = visit(i);
+    if (found) return found;
+  }
+  return null;
+};
+
+/** Can the four extra turns be bought back by splitting them across two VNs? */
+export const routingVerdictSplit = (g: Graph, plans: Turn[][]) => {
+  const cdg = buildCDGVC(g, plans);
+  const cycle = findCycleVC(cdg);
+  return { cdg, cycle, safe: cycle === null };
+};
+
+/** Minimal adaptive: XY and YX are both shortest on a mesh, pick the less loaded one. */
+export const adaptivePath = (g: Graph, s: number, t: number, load: Map<string, number>): { path: number[]; picked: 'xy' | 'yx' } => {
+  const score = (p: number[]) => {
+    let sum = 0;
+    for (let i = 0; i + 1 < p.length; i++) {
+      const [a, b] = p[i] < p[i + 1] ? [p[i], p[i + 1]] : [p[i + 1], p[i]];
+      sum += load.get(`${a}-${b}`) ?? 0;
+    }
+    return sum;
+  };
+  const xy = xyPath(g, s, t);
+  const yx = yxPath(g, s, t);
+  return score(yx) < score(xy) ? { path: yx, picked: 'yx' } : { path: xy, picked: 'xy' };
+};
+
+/** The direction list a source-routed header would carry: one entry per hop. */
+export const sourceRoute = (g: Graph, path: number[]): Dir[] => {
+  const dirs: Dir[] = [];
+  for (let i = 0; i + 1 < path.length; i++) {
+    const d = dirOf(g, path[i], path[i + 1]);
+    if (d) dirs.push(d);
+  }
+  return dirs;
+};
+
 /** Path-based multicast: the union of the individual XY routes. */
 export const multicastTree = (g: Graph, src: number, dests: number[]) => {
   const edges = new Set<string>();

@@ -3,11 +3,17 @@
   import Figure from '../../components/Figure.svelte';
   import Quiz from '../../components/Quiz.svelte';
   import TopologyLab from '../../components/noc/TopologyLab.svelte';
+  import { buildTopology, metrics } from '../../lib/noc/topology';
   import { lang, t } from '../../lib/lang.svelte';
   import { navigate } from '../../lib/router.svelte';
 
   const en = $derived(lang.value === 'en');
   const open = (slug: string) => navigate(`/book/on-chip-networks/${slug}`);
+
+  const ft = metrics(buildTopology('fattree', 4, 1));
+  const mesh = metrics(buildTopology('mesh', 4, 4));
+  const torus = metrics(buildTopology('torus', 4, 4));
+  const ring = metrics(buildTopology('ring', 16, 1));
 </script>
 
 <div class="page">
@@ -53,7 +59,7 @@
     <Figure
       no={t('图 3.1', 'Figure 3.1')}
       caption={t(
-        '换拓扑、换规模，点两个节点看最短路径。下面的表格是另外三种连法在同一 16 节点下的实测值——全部由图上 BFS 算出。',
+        '换拓扑、换规模，点两个节点看最短路径。下面的表格是另外四种连法在同一 16 节点下的实测值——全部由图上 BFS 算出。',
         'Change topology and size, then pick two nodes to see a shortest path. The table measures the other three on the same 16 nodes — all from BFS on the graph.'
       )}
     >
@@ -138,6 +144,35 @@
       {/if}
     </div>
 
+    <div class="prose">
+      {#if en}
+        <p>
+          Put a 4-ary fat tree next to a 4×4 mesh and the numbers are unambiguous. Both reach 16 terminals and both have
+          diameter 6, but the fat tree needs {ft.links} links instead of {mesh.links}, has {ft.degreeMax} ports on its
+          core switches instead of 4, and buys a bisection of {ft.bisection} against {mesh.bisection}. Its average hop
+          count is worse ({ft.avgHops.toFixed(2)} versus {mesh.avgHops.toFixed(2)}) — everything goes up to the core
+          and back down, and most pairs are in different pods.
+        </p>
+        <p>
+          So “fat tree is non-blocking” is true and incomplete: it is non-blocking at the bisection, and it pays for that
+          in every other column of the table. That is why meshes win on a die (Chapter 8) and fat trees win when the
+          terminals are large and the wires can be kept short — datacentre racks rather than a 20 mm² tile.
+        </p>
+      {:else}
+        <p>
+          把一个 4 元 fat tree 和 4×4 mesh 放在一起，数字没有歧义。两者都是 16 个终端、直径都是 6，
+          但 fat tree 要 {ft.links} 条链路而不是 {mesh.links} 条，核心交换节点有 {ft.degreeMax} 个端口而不是 4 个，
+          对剖是 {ft.bisection} 而不是 {mesh.bisection}。它的平均跳数反而更差（{ft.avgHops.toFixed(2)} 对 {mesh.avgHops.toFixed(2)}）
+          ——所有流量都要上到核心再下来，而大多数节点对不在同一个 pod 里。
+        </p>
+        <p>
+          所以“fat tree 是无阻塞的”这句话正确但不完整：它在对剖这一列上无阻塞，代价写在其他每一列上。
+          这就是为什么 mesh 在芯片上赢（第 8 章），而 fat tree 在终端很大、线能保持短的地方赢——
+          比如机架，而不是 20 平方毫米的 tile。
+        </p>
+      {/if}
+    </div>
+
     <Figure
       no={t('图 3.3', 'Figure 3.3')}
       caption={t(
@@ -175,7 +210,52 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">3.4</span>{t('抽象度量会骗人', 'Abstract metrics lie a little')}</h3>
+      <h3><span class="h-no">3.4</span>{t('第五个数：路径多样性', 'The fifth number: path diversity')}</h3>
+      {#if en}
+        <p>
+          The four numbers say how far and how wide; they say nothing about how many <em>different</em> ways a packet can
+          get there. Count all shortest paths between every pair and the picture changes: a 4×4 mesh
+          offers {mesh.diversity.toFixed(2)} shortest paths per pair on average, a torus
+          {torus.diversity.toFixed(2)}, a 4-ary fat tree {ft.diversity.toFixed(2)}, and a ring barely
+          {ring.diversity.toFixed(2)}.
+        </p>
+        <p>
+          Diversity is what adaptive routing and load balancing spend. A ring has one way round in each direction, so a
+          single hot link has nowhere to go; a torus has wrap-around alternatives; a fat tree has many equal-cost
+          up-and-down paths through different cores.
+        </p>
+      {:else}
+        <p>
+          前四个数说“多远、多宽”，却没说一个包有<em>几条不同的</em>路可走。把所有节点对之间的最短路都数一遍，
+          图景就变了：4×4 mesh 平均每对有 {mesh.diversity.toFixed(2)} 条最短路，
+          torus 是 {torus.diversity.toFixed(2)}，4 元 fat tree 是 {ft.diversity.toFixed(2)}，
+          而 ring 只有 {ring.diversity.toFixed(2)} 条。
+        </p>
+        <p>
+          路径多样性正是自适应路由与负载均衡花的钱。ring 每个方向只有一条路，出现一条热链路就无处可去；
+          torus 有环绕带来的替代路径；fat tree 有许多条经过不同核心的等价“上去再下来”。
+        </p>
+      {/if}
+    </div>
+
+    <div class="prose">
+      <h3><span class="h-no">3.5</span>{t('层次化与拓扑合成', 'Hierarchy, and how topologies get chosen')}</h3>
+      <p>
+        {t(
+          '真实芯片很少用纯 mesh：常见做法是分层的——几个核先用小而快的局域开关连成一簇，簇之间再用 ring 或 mesh。第 8 章的 KAIST MC-NoC 就是“4 个 SPU 一簇 + 簇间 ring”，Sparc T5 干脆用一个 8×9 交叉开关把 L2、L3 与 IO 连起来。分层的理由是局部性：大部分流量留在簇内，只有少数跨越簇边界，于是可以用便宜的开关处理大多数访问。',
+          'Real chips rarely use a pure mesh: the common shape is hierarchical — a few cores joined by a small fast local switch, clusters joined by a ring or mesh. KAIST’s MC-NoC in Chapter 8 is four SPUs per cluster with a ring between clusters; Sparc T5 simply uses an 8×9 crossbar for L2, L3 and IO. The reason is locality: most traffic stays inside a cluster, a minority crosses, so cheap switches handle most accesses.'
+        )}
+      </p>
+      <p>
+        {t(
+          '拓扑合成则是反过来的问题：给定通信图与面积预算，自动生成一张网。工具常用启发式（先聚簇、再把簇连成规则骨架、最后加捷径降低直径）。这个网站不替你做综合，但每一步的度量都是同一套：直径、平均跳数、对剖、多样性——换一张图，重新算一遍即可。',
+          'Topology synthesis asks the reverse question: given a communication graph and an area budget, generate a network. Tools use heuristics — cluster, join clusters into a regular spine, add shortcuts to cut the diameter. This site does not synthesise for you, but every candidate is judged by the same measurements: diameter, average hops, bisection, diversity — rebuild the graph and recompute.'
+        )}
+      </p>
+    </div>
+
+    <div class="prose">
+      <h3><span class="h-no">3.6</span>{t('抽象度量会骗人', 'Abstract metrics lie a little')}</h3>
       {#if en}
         <p>
           All four numbers assume every link costs the same. On a real die they do not: a mesh link spans one tile, a
@@ -209,7 +289,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">3.5</span>{t('自测', 'Check yourself')}</h3>
+      <h3><span class="h-no">3.7</span>{t('自测', 'Check yourself')}</h3>
       <Quiz
         questions={[
           {
@@ -231,6 +311,16 @@
             ],
             answer: 1,
             why: t('度数是每个路由器的端口数，直接变成交叉开关的输入×输出和格点面积。radix 是面积的第一驱动力。', 'Degree is ports per router, which becomes crossbar inputs × outputs and tile area. Radix is the first driver of area.')
+          },
+          {
+            q: t('16 个终端时，fat-tree 的对剖是 16，代价写在哪？', 'A 16-terminal fat tree has bisection 16 — where is the cost?'),
+            options: [
+              t('链路变成 48 条、核心交换节点 8 个端口', '48 links instead of 24, and 8-port core switches'),
+              t('直径变差', 'The diameter gets worse'),
+              t('没有代价，fat-tree 是免费的', 'Nothing: a fat tree is free')
+            ],
+            answer: 0,
+            why: t('两者直径都是 6，但对剖翻四倍靠的是多一倍链路与高 radix 的核心开关；平均跳数还更差（5.47 对 2.67）。', 'Both have diameter 6, but the 4× bisection is bought with twice the links and high-radix core switches — and average hops get worse (5.47 against 2.67).')
           },
           {
             q: t('为什么说抽象度量会骗人？', 'Why do abstract metrics mislead?'),

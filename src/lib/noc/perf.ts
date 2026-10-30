@@ -154,3 +154,22 @@ export const delayCurve = (base: number, points = 16): Point[] =>
 
 /** Injection rate that a topology can sustain, in packets per node per cycle. */
 export const saturatedInjection = (p: Profile) => p.saturation;
+
+/**
+ * Mean shortest path over distinct pairs of a k×k mesh: 2k/3.
+ * (The textbook (k²−1)/3k per dimension counts same-node pairs as distance 0;
+ * multiplying by k²/(k²−1) turns it into this.)
+ */
+export const meshHopFormula = (k: number) => (2 * k) / 3;
+
+/** Pure-queue ideal: the zero-load latency stretched by 1/(1−ρ), with no topology in it. */
+export const idealLatency = (zeroLoad: number, rho: number) => zeroLoad / (1 - rho);
+
+/**
+ * Credit-based backpressure: to keep a link busy, the buffer behind it must cover
+ * the round trip of a credit. Below that depth the link idles every round trip.
+ */
+export const creditThroughput = (depth: number, roundTrip: number) =>
+  roundTrip <= 0 ? 1 : Math.min(1, depth / roundTrip);
+
+export const bufferDepthForFullRate = (roundTrip: number) => Math.ceil(roundTrip);

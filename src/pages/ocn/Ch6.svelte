@@ -13,6 +13,13 @@
   const base = pipeline({ vcs: 2, speculate: false, lookahead: false });
   const spec = pipeline({ vcs: 2, speculate: true, lookahead: false });
   const look = pipeline({ vcs: 2, speculate: false, lookahead: true });
+
+  /** crossbar cost grows with the square of the port count, and again with speedup */
+  const crossbarRows = [4, 8, 16, 32, 64].map((ports) => ({
+    ports,
+    area1: ports * ports,
+    area2: ports * ports * 2
+  }));
 </script>
 
 <div class="page">
@@ -122,6 +129,50 @@
       {/if}
     </div>
 
+    <Figure
+      no={t('图 6.3', 'Figure 6.3')}
+      caption={t(
+        '交叉开关的相对面积随端口数平方增长，speedup 再乘一次。这就是为什么 64 端口的 Swizzle 要用完全不同的实现，而 Sparc T5 的 8×9 交叉开关面积已经约等于一个半 L3 bank。',
+        'Relative crossbar area grows with the square of the port count, and speedup multiplies it again. That is why 64-port Swizzle needed a different implementation, and why Sparc T5’s 8×9 crossbar already rivals one and a half L3 banks in area.'
+      )}
+    >
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{t('端口数', 'Ports')}</th>
+            <th>{t('相对面积（speedup 1）', 'Relative area (speedup 1)')}</th>
+            <th>{t('相对面积（speedup 2）', 'Relative area (speedup 2)')}</th>
+            <th>{t('相对面积（slicing 4 组）', 'Relative area (4 slices)')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each crossbarRows as row}
+            <tr>
+              <td class="num">{row.ports}</td>
+              <td class="num">{row.area1}</td>
+              <td class="num">{row.area2}</td>
+              <td class="num">{(row.area1 / 4).toFixed(0)}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </Figure>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          Slicing looks like free area in that table, and it is not: four slices of a 16-port crossbar only connect
+          within their own group unless you add a second stage. What you have really bought is a cheaper router for
+          traffic that stays local, and a bigger problem for traffic that does not.
+        </p>
+      {:else}
+        <p>
+          表里 slicing 的那一列看起来是白送的面积，其实不是：把一个 16 端口的交叉开关切成 4 组，
+          没有第二级的话组间就不通了。你真正买到的是“局部流量的便宜路由器”，以及“非局部流量更难处理”。
+        </p>
+      {/if}
+    </div>
+
     <div class="prose">
       <h3><span class="h-no">6.4</span>{t('分配与仲裁：每拍都要做的选择', 'Allocation and arbitration: a choice every cycle')}</h3>
       {#if en}
@@ -173,7 +224,7 @@
     </div>
 
     <Figure
-      no={t('图 6.3', 'Figure 6.3')}
+      no={t('图 6.4', 'Figure 6.4')}
       caption={t(
         '三种配置下，4 跳、4 flit 的包的零负载延迟。全部由上面的流水线级数算出：hops × 每跳 + 序列化。',
         'Zero-load latency of a 4-hop, 4-flit packet under three configurations — all computed as hops × per-hop + serialisation.'

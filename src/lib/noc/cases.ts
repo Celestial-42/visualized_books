@@ -176,6 +176,32 @@ export const CASES: CaseStudy[] = [
     flow: 'circuit-like'
   },
   {
+    id: 'scorpio',
+    name: 'MIT SCORPIO',
+    year: 2014,
+    org: 'MIT',
+    kind: 'mesh',
+    w: 6,
+    h: 6,
+    what: '36 核 6×6 mesh，在无序网络上做侦听一致性：一条无缓冲广播的 notification 网络负责定序，主网络只负责送数据。',
+    whatEn: 'Thirty-six cores on a 6×6 mesh running snoopy coherence over an unordered network: a bufferless broadcast notification network fixes the order, the main network just moves data.',
+    routing: 'OR-tree broadcast + XY',
+    flow: 'bufferless broadcast / wormhole'
+  },
+  {
+    id: 't5',
+    name: 'Oracle Sparc T5',
+    year: 2013,
+    org: 'Oracle',
+    kind: 'crossbar',
+    w: 72,
+    h: 1,
+    what: '8×9 的交叉开关把 8 组 L2、8 个 L3 bank 与 IO 连起来，1 TB/s；交叉开关面积约等于一个半 L3 bank。',
+    whatEn: 'An 8×9 crossbar joining eight L2 pairs, eight L3 banks and the IO controller at 1 TB/s, with an area of about one and a half L3 banks.',
+    routing: 'direct',
+    flow: 'crossbar'
+  },
+  {
     id: 'kaist',
     name: 'KAIST MC-NoC',
     year: 2010,

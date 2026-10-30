@@ -22,7 +22,9 @@
   } = $props();
 
   const isMesh = $derived(graph.kind === 'mesh' || graph.kind === 'torus');
-  const nodeSize = $derived(isMesh ? 5.4 : 4.6);
+  const nodeSize = $derived(isMesh ? 5.4 : graph.kind === 'fattree' ? 3.6 : 4.6);
+  const drawn = $derived(graph.kind === 'fattree' ? [...Array(graph.n).keys()] : graph.terminals);
+  const isTerminal = (node: number) => graph.terminals.includes(node);
 </script>
 
 <svg class="graph" viewBox="-6 -6 112 112" style={`height:${height}px`} role="img">
@@ -50,13 +52,14 @@
     {/if}
   {/each}
 
-  {#each graph.terminals as node}
+  {#each drawn as node}
     <g
       class="node"
       class:sel={selected === node}
       class:dest={dest === node}
-      onclick={() => onpick?.(node)}
-      role={onpick ? 'button' : undefined}
+      class:switch={!isTerminal(node)}
+      onclick={() => isTerminal(node) && onpick?.(node)}
+      role={onpick && isTerminal(node) ? 'button' : undefined}
     >
       <rect
         x={graph.pos[node].x - nodeSize / 2}
@@ -65,7 +68,7 @@
         height={nodeSize}
         rx="1.3"
       />
-      {#if showIds}
+      {#if showIds && isTerminal(node)}
         <text x={graph.pos[node].x} y={graph.pos[node].y + 1.5} text-anchor="middle">{node}</text>
       {/if}
     </g>
@@ -125,6 +128,15 @@
 
   .node:hover rect {
     stroke: var(--accent);
+  }
+
+  .node.switch rect {
+    fill: var(--paper-2);
+    stroke: var(--line);
+  }
+
+  .node.switch:hover rect {
+    stroke: var(--line);
   }
 
   .route {

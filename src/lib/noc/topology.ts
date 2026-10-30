@@ -4,7 +4,7 @@
  * on the graph; nothing is copied from a table.
  */
 
-export type TopoKind = 'ring' | 'mesh' | 'torus' | 'crossbar';
+export type TopoKind = 'ring' | 'mesh' | 'torus' | 'crossbar' | 'fattree';
 
 export type Graph = {
   kind: TopoKind;
@@ -15,6 +15,8 @@ export type Graph = {
   links: [number, number][];
   pos: { x: number; y: number }[];
   terminals: number[];
+  /** structural bisection for graphs whose minimum cut is known by construction */
+  cut?: number;
 };
 
 export type Metrics = {
@@ -39,7 +41,8 @@ const finish = (
   n: number,
   edges: [number, number][],
   pos: { x: number; y: number }[],
-  terminals: number[]
+  terminals: number[],
+  cut?: number
 ): Graph => {
   const adj: number[][] = Array.from({ length: n }, () => []);
   const seen = new Set<string>();
@@ -52,10 +55,71 @@ const finish = (
     adj[v].push(u);
     links.push([Math.min(u, v), Math.max(u, v)]);
   }
-  return { kind, w, h, n, adj: adj.map((l) => l.sort((a, b) => a - b)), links, pos, terminals };
+  return { kind, w, h, n, adj: adj.map((l) => l.sort((a, b) => a - b)), links, pos, terminals, cut };
+};
+
+/**
+ * Two-level k-ary fat tree: k pods, each with k/2 edge and k/2 aggregation
+ * switches, joined by (k/2)² core switches. Bisection is every aggregation-core
+ * link, so it stays constant as terminals grow.
+ */
+const fatTree = (k: number): Graph => {
+  const half = Math.max(1, Math.round(k / 2));
+  const pods = k;
+  const terminalsPerPod = half * half;
+  const terminals = pods * terminalsPerPod;
+
+  const edge = (pod: number, i: number) => terminals + pod * half + i;
+  const agg = (pod: number, i: number) => terminals + pods * half + pod * half + i;
+  const core = (i: number) => terminals + 2 * pods * half + i;
+  const n = terminals + 2 * pods * half + half * half;
+
+  const edges: [number, number][] = [];
+  const pos: { x: number; y: number }[] = [];
+
+  for (let pod = 0; pod < pods; pod++) {
+    for (let e = 0; e < half; e++) {
+      for (let t = 0; t < half; t++) {
+        const leaf = pod * terminalsPerPod + e * half + t;
+        edges.push([leaf, edge(pod, e)]);
+      }
+    }
+    for (let e = 0; e < half; e++) {
+      for (let a = 0; a < half; a++) edges.push([edge(pod, e), agg(pod, a)]);
+    }
+    for (let a = 0; a < half; a++) {
+      for (let c = 0; c < half; c++) edges.push([agg(pod, a), core(c)]);
+    }
+  }
+
+  const widthOf = (count: number) => 88 / Math.max(1, count - 1);
+  const terminalStep = widthOf(terminals);
+  const xTerminal = (t: number) => 6 + t * terminalStep;
+  const xPod = (pod: number) => 6 + (pod * terminalsPerPod + (terminalsPerPod - 1) / 2) * terminalStep;
+
+  for (let i = 0; i < n; i++) {
+    if (i < terminals) pos.push({ x: xTerminal(i), y: 100 });
+    else if (i < terminals + pods * half) {
+      const j = i - terminals;
+      const pod = Math.floor(j / half);
+      // edge switch i sits over its own two terminals
+      pos.push({ x: 6 + (pod * terminalsPerPod + (j % half) * half + (half - 1) / 2) * terminalStep, y: 72 });
+    } else if (i < terminals + 2 * pods * half) {
+      const j = i - terminals - pods * half;
+      const pod = Math.floor(j / half);
+      pos.push({ x: xPod(pod) + ((j % half) - (half - 1) / 2) * 1.6, y: 44 });
+    } else {
+      const j = i - terminals - 2 * pods * half;
+      pos.push({ x: 50 + (j - (half * half - 1) / 2) * 16, y: 10 });
+    }
+  }
+  // every aggregation-to-core link must be cut to split the pods in half
+  return finish('fattree', k, 1, n, edges, pos, [...Array(terminals).keys()], pods * half * half);
 };
 
 export const buildTopology = (kind: TopoKind, w: number, h: number): Graph => {
+  if (kind === 'fattree') return fatTree(w);
+
   if (kind === 'ring') {
     const n = w * h;
     const edges: [number, number][] = [];
@@ -148,6 +212,7 @@ export const countShortest = (g: Graph, s: number, t: number): number => {
  * a canonical cut is used for graphs too large to enumerate.
  */
 const bisection = (g: Graph): number => {
+  if (g.cut !== undefined) return g.cut;
   const T = g.terminals;
   if (T.length % 2 !== 0) return 0;
   // crossbar: one dedicated link per terminal, so half the terminals means half the links

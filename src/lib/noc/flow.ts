@@ -200,3 +200,154 @@ export const runRing = (state: RingState, maxTicks = 200): RingRun => {
 
 export const totalBuffered = (state: RingState) =>
   state.channels.reduce((n, c) => n + c.vcs.reduce((m, v) => m + v.buf.length, 0), 0);
+
+/**
+ * Packet-granular ring with virtual cut-through, used for bubble flow control.
+ * The book's rule is injection-side only: a packet may enter a buffer only when
+ * that buffer can still hold two more, so one packet-sized bubble survives and
+ * the cycle of full buffers can never close.
+ */
+export type PacketRing = {
+  routers: number;
+  slots: number;
+  mode: 'plain' | 'bubble';
+  reach: number;
+  respawn: boolean;
+  channels: { from: number; to: number; buf: number[] }[];
+  pending: Map<number, number[]>;
+  dest: Map<number, number>;
+  src: Map<number, number>;
+  nextPkt: number;
+  delivered: number;
+  ticks: number;
+  stuckTicks: number;
+  blocked: number;
+};
+
+export const makePacketRing = (opts: {
+  routers?: number;
+  slots?: number;
+  mode?: 'plain' | 'bubble';
+  reach?: number;
+  respawn?: boolean;
+  /** packets each source keeps trying to inject — this is what fills the ring */
+  backlog?: number;
+} = {}): PacketRing => {
+  const routers = opts.routers ?? 4;
+  const slots = opts.slots ?? 2;
+  const mode = opts.mode ?? 'plain';
+  const reach = opts.reach ?? 3;
+  const respawn = opts.respawn ?? true;
+  const backlog = opts.backlog ?? 2;
+
+  const pending = new Map<number, number[]>();
+  const dest = new Map<number, number>();
+  const src = new Map<number, number>();
+  let nextPkt = 0;
+  for (let i = 0; i < routers; i++) {
+    const ids: number[] = [];
+    for (let b = 0; b < backlog; b++) {
+      const id = nextPkt++;
+      ids.push(id);
+      dest.set(id, (i + reach) % routers);
+      src.set(id, i);
+    }
+    pending.set(i, ids);
+  }
+
+  return {
+    routers,
+    slots,
+    mode,
+    reach,
+    respawn,
+    channels: Array.from({ length: routers }, (_, i) => ({ from: i, to: (i + 1) % routers, buf: [] })),
+    pending,
+    dest,
+    src,
+    nextPkt,
+    delivered: 0,
+    ticks: 0,
+    stuckTicks: 0,
+    blocked: 0
+  };
+};
+
+export const tickPacketRing = (state: PacketRing): number => {
+  const bufs = state.channels.map((c) => c.buf.slice());
+  let moved = 0;
+
+  for (let step = 0; step < state.routers; step++) {
+    const i = (state.routers - 1 - step + state.routers) % state.routers;
+    const buf = bufs[i];
+    if (buf.length === 0) continue;
+    const pkt = buf[0];
+    if (state.channels[i].to === state.dest.get(pkt)) {
+      buf.shift();
+      state.delivered++;
+      moved++;
+      const from = state.src.get(pkt) ?? 0;
+      if (state.respawn) {
+        const id = state.nextPkt++;
+        state.src.set(id, from);
+        state.dest.set(id, (from + state.reach) % state.routers);
+        const queue = state.pending.get(from) ?? [];
+        queue.push(id);
+        state.pending.set(from, queue);
+      }
+      continue;
+    }
+    const next = (i + 1) % state.routers;
+    if (bufs[next].length < state.slots) {
+      buf.shift();
+      bufs[next].push(pkt);
+      moved++;
+    }
+  }
+
+  for (let i = 0; i < state.routers; i++) {
+    const queue = state.pending.get(i);
+    if (!queue || queue.length === 0) continue;
+    const next = (i + 1) % state.routers;
+    const room = state.slots - bufs[next].length;
+    // the book's bubble rule: only inject when two packet slots are still free
+    const need = state.mode === 'bubble' ? 2 : 1;
+    if (room >= need) {
+      bufs[next].push(queue.shift() as number);
+      moved++;
+    } else {
+      state.blocked++;
+    }
+  }
+
+  for (let i = 0; i < state.routers; i++) state.channels[i].buf = bufs[i];
+
+  state.ticks++;
+  state.stuckTicks = moved === 0 ? state.stuckTicks + 1 : 0;
+  return moved;
+};
+
+export const packetRingOccupancy = (state: PacketRing) =>
+  state.channels.reduce((n, c) => n + c.buf.length, 0);
+
+export const runPacketRing = (state: PacketRing, maxTicks = 120) => {
+  while (state.ticks < maxTicks && state.stuckTicks < 6) tickPacketRing(state);
+  return {
+    ticks: state.ticks,
+    delivered: state.delivered,
+    deadlocked: state.stuckTicks >= 6,
+    blocked: state.blocked,
+    occupancy: packetRingOccupancy(state),
+    capacity: state.routers * state.slots
+  };
+};
+
+/** Circuit switching: reserve the path hop by hop, stream, then tear down. */
+export const circuitCost = (hops: number, flits: number, setupPerHop = 1, teardownPerHop = 1) =>
+  hops * setupPerHop + flits + hops * teardownPerHop;
+
+/** Buffers a router needs per input port, in flits, for each scheme. */
+export const bufferFootprint = (mode: 'circuit' | 'wh' | 'vct', flits: number, vcs = 1) => {
+  if (mode === 'circuit') return 0;
+  return (mode === 'vct' ? flits : 1) * vcs;
+};

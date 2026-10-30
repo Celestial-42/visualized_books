@@ -52,8 +52,8 @@
     <Figure
       no={t('图 7.1', 'Figure 7.1')}
       caption={t(
-        '换拓扑与流量模式，看链路热力图与曲线怎么变。饱和注入率 = 1 / 最忙链路的负载，全部由逐对路由累加得出。',
-        'Change topology and pattern to watch the heat map and the curve move. Saturation is 1 / busiest-link load, accumulated by routing every pair.'
+        '换拓扑与流量模式，看链路热力图与曲线怎么变。饱和注入率 = 1 / 最忙链路的负载，全部由逐对路由累加得出；虚线是纯排队理想 1/(1−ρ)，实线是本页模型。',
+        'Change topology and pattern to watch the heat map and the curve move. Saturation is 1 / busiest-link load, accumulated by routing every pair; the dashed line is the pure queue 1/(1−ρ), the solid one is this page’s model.'
       )}
     >
       <PerfLab />
@@ -109,6 +109,27 @@
           <span class="m-cost">{t('最真 · 最贵', 'truest · most expensive')}</span>
         </div>
       </div>
+      {#if en}
+        <p>
+          An analytical model is usually two terms: a zero-load latency that the topology and router fix, plus a
+          queueing term that the load fixes. Figure 7.1 draws both: the solid line is an M/D/1 queue on top of the
+          measured zero-load latency, the dashed line is the pure 1/(1−ρ) ideal. Same shape, and the difference is the
+          knee — a real network stiffens earlier because contention is spatial, not just statistical.
+        </p>
+      {:else}
+        <p>
+          解析模型通常是两项：拓扑与路由器决定的零负载延迟，加上由负载决定的排队项。图 7.1 把两者都画了出来：
+          实线是在实测零负载延迟之上加 M/D/1 排队，虚线是纯 1/(1−ρ) 理想。形状一样，差别在膝盖——
+          真实网络更早“硬”起来，因为竞争是空间性的，不只是统计性的。
+        </p>
+      {/if}
+      <div class="note">
+        <b>{t('先验后仿：', 'Model first, simulate second: ')}</b>
+        {t(
+          '平均跳数可以先用手算：k×k mesh 每个维度 E|d| = (k²−1)/3k，二维相加即可。图和公式对不上，先别跑仿真——那说明图建错了。',
+          'average hops can be checked by hand: on a k×k mesh each dimension has E|d| = (k²−1)/3k, and two dimensions add. If the formula and the graph disagree, fix the graph before running a simulation.'
+        )}
+      </div>
     </div>
 
     <div class="prose">
@@ -126,6 +147,13 @@
           'protocol messages are not the same size. Requests are one flit, data is four or five, snoops are one — once mixed, “average packet size” means very little. Evaluate per class.'
         )}
       </div>
+      <h4>{t('虚拟网络与顺序', 'Virtual networks and ordering')}</h4>
+      <p>
+        {t(
+          '一个协议通常需要“同一类消息保序、不同类之间不保序”。于是网络上开几条独立的虚拟网络：请求、侦听、响应、数据各走一条。两条好处同时到手——保序只需在同类内部维护（比如按源 ID 排序），而大块数据不会把一条侦听堵在缓冲里。代价是每类都要自己的缓冲与仲裁，这也是路由器面积的主要来源之一。',
+          'A protocol usually wants ordering inside a class and no ordering across classes. So the network exposes several independent virtual networks — request, snoop, response, data. Two wins at once: ordering only has to be maintained within a class (say, by source ID), and a bulk data transfer cannot park a snoop in a buffer. The price is buffers and arbitration per class, which is one of the main sources of router area.'
+        )}
+      </p>
     </div>
 
     <div class="prose">

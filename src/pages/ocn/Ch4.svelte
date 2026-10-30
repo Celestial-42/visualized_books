@@ -3,6 +3,7 @@
   import Figure from '../../components/Figure.svelte';
   import Quiz from '../../components/Quiz.svelte';
   import RouteLab from '../../components/noc/RouteLab.svelte';
+  import TurnDeadlockLab from '../../components/noc/TurnDeadlockLab.svelte';
   import { buildTopology } from '../../lib/noc/topology';
   import { multicastTree, hamiltonianOrder } from '../../lib/noc/routing';
   import { lang, t } from '../../lib/lang.svelte';
@@ -66,8 +67,8 @@
     <Figure
       no={t('图 4.1', 'Figure 4.1')}
       caption={t(
-        '同一对端点，四种算法的实际路径。Valiant 会先绕到一个中间节点，跳数立刻变多——它买的是负载均衡，不是延迟。',
-        'The same endpoints under four algorithms. Valiant detours through an intermediate node and pays hops immediately — it is buying balance, not latency.'
+        '同一对端点，五种算法的实际路径。Valiant 会先绕到一个中间节点，跳数立刻变多；最小自适应在 XY 与 YX 两条最短路里挑更空的那条，右上角同步显示源路由头（每跳一个方向）。',
+        'The same endpoints under five algorithms. Valiant detours through an intermediate node and pays hops immediately; minimal adaptive picks the emptier of the two shortest paths, and the header readout shows the source-route directions.'
       )}
     >
       <RouteLab />
@@ -86,7 +87,7 @@
           XY routing is deadlock-free for a beautifully simple reason: it permits only four of the eight turns on a
           mesh, and those four cannot close. West-first forbids a different four and is also acyclic. Take XY and add
           just <code>S→W</code> and <code>N→E</code> and the four edges of a single square close — the engine in
-          Figure 4.1 finds that cycle and prints it.
+          Figure 4.2 finds that cycle and prints it.
         </p>
       {:else}
         <p>
@@ -97,7 +98,7 @@
         <p>
           XY 路由无死锁的理由非常干净：mesh 上 8 个转向它只允许 4 个，而这 4 个闭不上。
           West-first 禁止的是另外 4 个，同样无环。而在 XY 上只加 <code>S→W</code> 和 <code>N→E</code>，
-          一个方格的四条边就接通了——图 4.1 里的引擎会把这个环找出来并打印给你看。
+          一个方格的四条边就接通了——下面图 4.2 的引擎会把这个环找出来并打印给你看。
         </p>
       {/if}
     </div>
@@ -110,21 +111,83 @@
           'buffer occupancy flows along the dependency graph. If the graph is acyclic there is a topological order, and the packet furthest along that order always has somewhere to go. A cycle breaks the argument.'
         )}
       </div>
+
+      <h3><span class="h-no">4.3</span>{t('两种死锁，别混为一谈', 'Two deadlocks, and they are not the same')}</h3>
       {#if en}
         <p>
-          This is also why the escape-route tricks in Chapter 5 work. Virtual channels, datelines and bubbles are all
-          different ways of making sure the dependency graph, restricted to each escape class, stays acyclic.
+          <b>Routing deadlock</b> is a property of the path set: the turns you permit form a cycle in the channel
+          dependency graph, so some traffic pattern can always close it, no matter how much buffering you buy.
+          <b>Flow-control deadlock</b> is a property of an execution: buffers happen to be occupied in a cycle right now.
+          The first is a design bug; the second can also happen in a correctly designed network if the routing is
+          unrestricted.
+        </p>
+        <p>
+          Chapter 5 attacks the second directly with buffers and virtual channels. This section is about the first: a
+          cycle in the dependency graph is a <em>proof obligation</em>, and the proof is a graph traversal, not an
+          argument from intuition.
         </p>
       {:else}
         <p>
-          这也是第 5 章那些“逃生方案”能成立的原因。虚拟信道、dateline、气泡流控，本质上都是同一种手段：
-          保证在每一个逃生类别内部，依赖图仍然无环。
+          <b>路由死锁</b>是路径集合的性质：你允许的转向在信道依赖图里构成环，那么总存在某个流量模式能把它闭合，
+          无论加多少缓冲。 <b>流控死锁</b>是一次执行的性质：此刻缓冲恰好被环形占用。前者是设计缺陷；
+          后者即使设计正确、只要路由不加限制，也可能发生。
+        </p>
+        <p>
+          第 5 章用缓冲与虚拟信道正面处理后者；这一节处理前者：依赖图里的环是一个<em>证明义务</em>，
+          而证明的手段是图遍历，不是直觉。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 4.2', 'Figure 4.2')}
+      caption={t(
+        '把 VN 一起摊开再判环。单虚拟网络多加两个转向就成环；拆成“维序 + west-first”两个 VN、且只允许 VN0→VN1 升级，8 个转向全部可用却仍然无环——代价是多一套缓冲与仲裁。',
+        'Lay the VNs out before you look for cycles. One VN plus two extra turns cycles; split into XY and west-first VNs with escalation only from VN0 to VN1, and all eight turns fit without a cycle — at the price of a second set of buffers and arbiters.'
+      )}
+    >
+      <TurnDeadlockLab />
+    </Figure>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          That is the whole trade of virtual channels in routing: they do not change the topology, they buy back
+          forbidden turns by splitting the dependency graph into ordered layers. Every extra VN is another set of
+          buffers, another arbiter, and one more thing to verify.
+        </p>
+        <p>
+          Notice what the lab does <em>not</em> show: splitting is not a magic wand. If the second VN's own turn set is
+          cyclic, the layered graph cycles too — the last preset is exactly that case. Duato's escape-VC theorem is the
+          stronger statement (a single acyclic sub-network reachable from every channel is enough), and Chapter 5 uses
+          it at the flow-control level.
+        </p>
+      {:else}
+        <p>
+          这就是虚拟信道在路由层的全部交易：它不改变拓扑，而是把依赖图切成有序的几层，换回被禁止的转向。
+          每多一个 VN，就多一套缓冲、一个仲裁器，以及一份要验证的东西。
+        </p>
+        <p>
+          注意这个实验<strong>没有</strong>说明什么：分层不是万能钥匙。如果第二个 VN 自己的转向集就有环，
+          分层后的图照样有环——最后一个预设正是这种情况。Duato 的逃逸 VC 定理是一个更强的结论
+          （存在一个从任意信道可达的无环子网就够了），第 5 章会在流控层用到它。
+        </p>
+      {/if}
+      {#if en}
+        <p>
+          Which is also why Chapter 6 cares so much about allocators: a VN only helps if a packet can actually get a
+          buffer in it. An allocator that starves the escape VN starves the deadlock-freedom proof.
+        </p>
+      {:else}
+        <p>
+          这也解释了第 6 章为什么那么在意分配器：VN 只有在包真的能拿到它的缓冲时才有用。
+          一个让逃逸 VN 饿死的分配器，会让“无死锁”的证明落空。
         </p>
       {/if}
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">4.3</span>{t('多播：一棵树省下多少', 'Multicast: what a tree saves')}</h3>
+      <h3><span class="h-no">4.4</span>{t('多播：一棵树省下多少', 'Multicast: what a tree saves')}</h3>
       {#if en}
         <p>
           When one message must reach several destinations, sending it several times wastes the shared prefix. The
@@ -140,7 +203,7 @@
     </div>
 
     <Figure
-      no={t('图 4.2', 'Figure 4.2')}
+      no={t('图 4.3', 'Figure 4.3')}
       caption={t(
         `4×4 mesh 上从 0 号节点发往 {${dests.join(', ')}} 四个目的地：树形 ${tree.treeHops} 跳，逐个单播 ${tree.unicastHops} 跳——公共前缀被合并掉了。`,
         `From node 0 to ${dests.join(', ')} on a 4×4 mesh: ${tree.treeHops} hops as a tree versus ${tree.unicastHops} as separate unicasts — the shared prefix is merged.`
@@ -169,7 +232,7 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">4.4</span>{t('不规则拓扑与实现', 'Irregular topologies and implementation')}</h3>
+      <h3><span class="h-no">4.5</span>{t('不规则拓扑与实现', 'Irregular topologies and implementation')}</h3>
       <p>
         {t(
           `现成的芯片常常不是网格：外设、存储控制器、加速器摆在哪里，图就长成什么样。在不规则图上，XY 这种“按维度”的路由没有定义，通常改用源路由（包头带转向表）、节点表路由，或运行时算出的组合逻辑。代价是包头更宽、或者路由表要占面积。`,
@@ -194,7 +257,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">4.5</span>{t('自测', 'Check yourself')}</h3>
+      <h3><span class="h-no">4.6</span>{t('自测', 'Check yourself')}</h3>
       <Quiz
         questions={[
           {
@@ -216,6 +279,16 @@
             ],
             answer: 1,
             why: t('最小性本身不保证无环；是“只从水平转垂直、绝不反向”这一限制让信道依赖图有拓扑序。', 'Minimality alone guarantees nothing; the rule “horizontal then vertical, never back” is what gives the channel graph a topological order.')
+          },
+          {
+            q: t('把 8 个转向拆到两个 VN 上，为什么就能无死锁？', 'Why does splitting the eight turns over two VNs remove the deadlock?'),
+            options: [
+              t('因为每个 VN 的转向集各自无环，且只允许从 VN0 升到 VN1', 'Each VN’s turn set is acyclic, and escalation only goes VN0 → VN1'),
+              t('因为多了一套缓冲，容量变大了', 'Because the extra buffer makes the network bigger'),
+              t('因为 VN1 比 VN0 快', 'Because VN1 is faster than VN0')
+            ],
+            answer: 0,
+            why: t('依赖图按 (信道, VN) 展开后，升级边只朝一个方向，环就无法闭合；容量并不参与这个论证。', 'Once the graph is laid out per (channel, VN), the escalation edges point one way, so no cycle can close — capacity plays no part in the argument.')
           },
           {
             q: t('多播树省下的是什么？', 'What does a multicast tree actually save?'),

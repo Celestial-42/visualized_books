@@ -6,16 +6,22 @@
   type Kind = TopoKind;
   type Size = '9' | '16';
 
-  const KINDS: Kind[] = ['ring', 'mesh', 'torus', 'crossbar'];
-  const LABEL: Record<Kind, string> = { ring: 'ring', mesh: 'mesh', torus: 'torus', crossbar: 'crossbar' };
+  const KINDS: Kind[] = ['ring', 'mesh', 'torus', 'crossbar', 'fattree'];
+  const LABEL: Record<Kind, string> = {
+    ring: 'ring',
+    mesh: 'mesh',
+    torus: 'torus',
+    crossbar: 'crossbar',
+    fattree: 'fat-tree'
+  };
 
   let kind = $state<Kind>('mesh');
   let size = $state<Size>('16');
   let picks = $state<number[]>([]);
 
   const dims = $derived.by(() => {
-    if (kind === 'ring') return { w: Number(size), h: 1 };
-    if (kind === 'crossbar') return { w: Number(size), h: 1 };
+    if (kind === 'ring' || kind === 'crossbar') return { w: Number(size), h: 1 };
+    if (kind === 'fattree') return { w: 4, h: 1 };
     const side = size === '9' ? 3 : 4;
     return { w: side, h: side };
   });
@@ -26,9 +32,9 @@
   const path = $derived(picks.length === 2 ? pathBetween(graph, picks[0], picks[1]) : []);
 
   const comparison = $derived(
-    KINDS.map((k) => {
-      const g = buildTopology(k, k === 'mesh' || k === 'torus' ? 4 : 16, k === 'mesh' || k === 'torus' ? 4 : 1);
-      return { kind: k, ...metrics(g) };
+    (['ring', 'mesh', 'torus', 'crossbar', 'fattree'] as Kind[]).map((k) => {
+      const g = buildTopology(k, k === 'mesh' || k === 'torus' ? 4 : k === 'fattree' ? 4 : 16, k === 'mesh' || k === 'torus' ? 4 : 1);
+      return { kind: k, ...metrics(g), label: LABEL[k] };
     })
   );
 
@@ -50,14 +56,18 @@
     </div>
     <div class="seg">
       {#each ['9', '16'] as s}
-        <button class:active={size === s} onclick={() => { size = s as Size; picks = []; }}>{s} nodes</button>
+        <button class:active={size === s} disabled={kind === 'fattree'} onclick={() => { size = s as Size; picks = []; }}>{s} nodes</button>
       {/each}
     </div>
     <span class="spacer"></span>
-    <span class="hint">{t('点两个节点看最短路径', 'Pick two nodes to see a shortest path')}</span>
+    <span class="hint">
+      {kind === 'fattree'
+        ? t('4 元 fat-tree：16 个终端 + 20 个交换节点', '4-ary fat-tree: 16 terminals + 20 switches')
+        : t('点两个节点看最短路径', 'Pick two nodes to see a shortest path')}
+    </span>
   </div>
 
-  <GraphView {graph} selected={picks[0] ?? -1} dest={picks[1] ?? -1} routes={path.length ? [path] : []} onpick={pick} height={286} />
+  <GraphView {graph} selected={picks[0] ?? -1} dest={picks[1] ?? -1} routes={path.length ? [path] : []} onpick={pick} height={kind === 'fattree' ? 320 : 286} />
 
   {#if path.length}
     <p class="route-note mono">
@@ -112,7 +122,7 @@
     <tbody>
       {#each comparison as row}
         <tr class:on={row.kind === kind}>
-          <td><span class="swatch" class:sel={row.kind === kind}></span>{LABEL[row.kind]}</td>
+          <td><span class="swatch" class:sel={row.kind === kind}></span>{row.label}</td>
           <td class="num">{row.degreeMin}–{row.degreeMax}</td>
           <td class="num">{row.diameter}</td>
           <td class="num">{f(row.avgHops)}</td>
