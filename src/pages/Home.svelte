@@ -1,9 +1,11 @@
 <script lang="ts">
   import { CHAPTERS, PARTS } from '../lib/content';
+  import { chapterHref } from '../lib/books';
   import { navigate } from '../lib/router.svelte';
   import { lang, t } from '../lib/lang.svelte';
 
   const readyCount = CHAPTERS.filter((c) => c.status === 'ready').length;
+  const open = (slug: string) => navigate(`/book/memory-primer/${slug}`);
 </script>
 
 <div class="page home">
@@ -32,7 +34,7 @@
   </header>
 
   <section class="lenses">
-    <button class="lens" onclick={() => navigate('/ch3')}>
+    <button class="lens" onclick={() => open('ch3')}>
       <div class="lens-head">
         <span class="lens-no">01</span>
         <div>
@@ -79,7 +81,7 @@
       <span class="lens-go">{t('第 3 章 · 顺序连贯性 →', 'Chapter 3 · Sequential Consistency →')}</span>
     </button>
 
-    <button class="lens" onclick={() => navigate('/ch2')}>
+    <button class="lens" onclick={() => open('ch2')}>
       <div class="lens-head">
         <span class="lens-no">02</span>
         <div>
@@ -136,8 +138,8 @@
             {#if ch.status === 'ready'}
               <a
                 class="ch-card ready"
-                href={`#/${ch.slug}`}
-                onclick={(e) => { e.preventDefault(); navigate(`/${ch.slug}`); }}
+                href={chapterHref('memory-primer', ch.slug)}
+                onclick={(e) => { e.preventDefault(); open(ch.slug); }}
               >
                 <div class="ch-top">
                   <span class="ch-n display">{String(ch.n).padStart(2, '0')}</span>

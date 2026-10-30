@@ -10,7 +10,7 @@ export type Chapter = {
   status: ChapterStatus;
   blurb: string;
   blurbEn: string;
-  part: PartId;
+  part: string;
 };
 
 export type PartId = 'ground' | 'consistency' | 'coherence' | 'beyond';
