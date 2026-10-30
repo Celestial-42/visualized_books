@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RingView from './RingView.svelte';
   import { makePacketRing, tickPacketRing, runPacketRing, packetRingOccupancy, type PacketRing } from '../../lib/noc/flow';
   import { lang, t } from '../../lib/lang.svelte';
 
@@ -40,6 +41,10 @@
   });
 
   const deadlocked = $derived(view.stuck >= 6);
+
+  const ringChannels = $derived(
+    view.channels.map((c) => ({ from: c.from, to: c.to, used: c.buf.length, capacity: slots }))
+  );
 </script>
 
 <div class="lab">
@@ -78,6 +83,14 @@
     <button class="btn small primary" onclick={run} disabled={deadlocked}>{t('跑 100 拍', 'Run 100')}</button>
     <button class="btn small ghost" onclick={rebuild}>{t('重置', 'Reset')}</button>
   </div>
+
+  <RingView channels={ringChannels} {deadlocked} height={230} />
+  <p class="topo-note">
+    {t(
+      '四个路由器首尾相接，箭头粗细 = 这条信道已放的包数（容量见右侧数字）。气泡流控真正约束的是“注入这一步”：目标信道必须还空两个包位。',
+      'Four routers in a loop; arrow thickness is how many packets a channel holds (capacity on the right). Bubble flow control only constrains injection: the target channel must still have two free packet slots.'
+    )}
+  </p>
 
   <div class="ring">
     {#each view.channels as ch}
@@ -144,6 +157,13 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .topo-note {
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: var(--muted);
+    text-align: center;
   }
 
   .chan {

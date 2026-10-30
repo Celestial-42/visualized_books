@@ -4,6 +4,7 @@
   import Quiz from '../../components/Quiz.svelte';
   import FlowLab from '../../components/noc/FlowLab.svelte';
   import BubbleLab from '../../components/noc/BubbleLab.svelte';
+  import FlowTiming from '../../components/noc/FlowTiming.svelte';
   import { circuitCost, bufferFootprint, transferLatency } from '../../lib/noc/flow';
   import { creditThroughput } from '../../lib/noc/perf';
   import { lang, t } from '../../lib/lang.svelte';
@@ -112,6 +113,33 @@
     <Figure
       no={t('图 5.1', 'Figure 5.1')}
       caption={t(
+        '四跳到目的、4 flit 的包在时间轴上的样子：横向是周期，纵向是第几跳。store-and-forward 每一跳都要收满整包；wormhole/VCT 逐 flit 流水；电路交换先花 4 拍建路、最后 4 拍拆路。',
+        'A 4-flit packet over four hops on a timeline: cycles across, hops down. Store-and-forward collects the whole packet at each hop; wormhole/VCT pipelines flit by flit; circuit switching spends four cycles building the path and four tearing it down.'
+      )}
+    >
+      <FlowTiming />
+    </Figure>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          That figure is the arithmetic behind the table below: store-and-forward pays hops × flits because nothing
+          moves on until the tail lands; wormhole and VCT pay hops + flits − 1 because the head moves on while the body
+          is still arriving, and they differ only in how much a router must buffer; circuit switching pays a fixed
+          setup and teardown whether the payload is 4 flits or 64.
+        </p>
+      {:else}
+        <p>
+          这张图就是下面那张表的算术：store-and-forward 付 hops × flits，因为尾巴落地前什么都不能走；
+          wormhole 与 VCT 付 hops + flits − 1，因为头已经在下一跳走、身子还在路上——两者的差别只在“每个路由器要存多少”；
+          电路交换则不管载荷是 4 个还是 64 个 flit，都要先付一趟建路与拆路。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 5.2', 'Figure 5.2')}
+      caption={t(
         '4 跳路径上，电路交换与 wormhole 的总周期与缓冲占用。缓冲数按 2 条 VC 计；电路的代价是固定的建路/拆路。',
         'Circuit versus wormhole on a 4-hop path: total cycles and buffer footprint, counted with two VCs. The circuit pays a fixed setup and teardown.'
       )}
@@ -169,14 +197,55 @@
     </div>
 
     <Figure
-      no={t('图 5.2', 'Figure 5.2')}
+      no={t('图 5.3', 'Figure 5.3')}
       caption={t(
-        '单步或跑到底。单 VC 下很快出现“死锁 @ 周期 N”；打开 dateline 后同样的负载持续流动。三种流控的周期数在表里由公式算出。',
-        'Step or run. One VC produces “deadlock @ cycle N” almost immediately; turn on the dateline and the same load keeps moving. The cycle counts for the three flow-control schemes are computed in the table.'
+        '单步或跑到底。上半张是环的拓扑：箭头越粗越红表示该信道缓冲越满；下半张是每条信道里 flit 的细节。单 VC 下很快出现“死锁 @ 周期 N”，打开 dateline 后同样的负载持续流动。',
+        'Step or run. The top half is the ring itself: thicker, redder arrows mean fuller buffers. The bottom half is the flit-level detail per channel. One VC produces “deadlock @ cycle N” almost immediately; the dateline keeps the same load moving.'
       )}
     >
       <FlowLab />
     </Figure>
+
+    <div class="prose">
+      <h3><span class="h-no">5.4.1</span>{t('为什么只有“2 flit 缓冲”会卡死', 'Why only the two-flit buffer deadlocks')}</h3>
+      {#if en}
+        <p>
+          Count the resources, not the routers. The ring has four channels; with one VC and a depth of d flits each, the
+          whole ring can hold 4d flits. The load in this lab is four packets of F flits, so 4F flits are in flight once
+          everything is injected.
+        </p>
+        <ul>
+          <li><b>F = 2, d = 2:</b> capacity 8, in flight 8. Every buffer fills, every head waits on a full buffer, and
+            the ring jams at cycle 3.</li>
+          <li><b>F = 2, d = 3 or 4:</b> capacity 12 or 16 against 8 in flight — the ring always has room left, so it
+            keeps turning. This is not “three flits is safe”; it is “three flits is enough for <em>this</em> load”.</li>
+          <li><b>F = 4, d = 3:</b> 16 in flight against 12 slots — it deadlocks again at cycle 4, with bigger packets and
+            the same buffers.</li>
+        </ul>
+        <p>
+          So the honest statement is: when the in-flight flits can fill the ring, a single VC will jam it, and buffer
+          depth only moves the threshold. The dateline changes the structure instead of the size: packets that cross
+          the break move onto VC1 permanently (the marker in the ring diagram), so a VC1 packet never waits on VC0 and
+          the cycle cannot close.
+        </p>
+      {:else}
+        <p>
+          要数的是资源，不是路由器。这个环有四条信道；单 VC、深度 d 时，整个环能放 4d 个 flit。
+          这里的负载是四个各 F flit 的包，全部注入后就有 4F 个 flit 在途。
+        </p>
+        <ul>
+          <li><b>F = 2、d = 2：</b>容量 8，在途 8。每级缓冲都被填满，每个包头都在等一个满缓冲，第 3 拍就卡死。</li>
+          <li><b>F = 2、d = 3 或 4：</b>容量 12 或 16，而在途只有 8——环里始终有空位，所以能一直转。
+            这不是“3 个 flit 就安全”，而是“3 个 flit 对<em>这批</em>负载够用”。</li>
+          <li><b>F = 4、d = 3：</b>在途 16、容量 12——包变长、缓冲不变，第 4 拍又卡住。</li>
+        </ul>
+        <p>
+          所以准确的说法是：只要在途 flit 能把环填满，单 VC 就会卡死，加缓冲只是把阈值往后推。
+          dateline 改的不是大小而是结构：越过断点的包被永久换到 VC1（环图上标着 dateline 的那一段），
+          于是 VC1 的包永远不会去等 VC0，环闭不上。
+        </p>
+      {/if}
+    </div>
 
     <div class="prose">
       <h3><span class="h-no">5.5</span>{t('虚拟信道：把一条线切成几条', 'Virtual channels: one wire, several lanes')}</h3>
@@ -203,7 +272,7 @@
     </div>
 
     <Figure
-      no={t('图 5.3', 'Figure 5.3')}
+      no={t('图 5.4', 'Figure 5.4')}
       caption={t(
         '左边是队头阻塞：A 要去北，B 要去东，但只有一个缓冲，B 只能等。右边两条 VC：B 从另一条通道直接过去。',
         'Left: head-of-line blocking — A wants north, B wants east, one buffer, so B waits. Right: two VCs, and B leaves through the other lane.'
@@ -267,7 +336,7 @@
     </div>
 
     <Figure
-      no={t('图 5.4', 'Figure 5.4')}
+      no={t('图 5.5', 'Figure 5.5')}
       caption={t(
         '气泡流控：包级 VCT，注入时要求目标缓冲还留两个空包位。单 VC 普通注入在 2 包/缓冲时立刻死锁；同一负载下打开气泡规则，环里始终留一个空位，流量持续。',
         'Bubble flow control: packet-level VCT, and injection requires two free packet slots. Plain injection deadlocks immediately at two slots per buffer; the same load under the bubble rule always keeps one hole free.'
@@ -275,6 +344,35 @@
     >
       <BubbleLab />
     </Figure>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          Same resource arithmetic as section 5.4.1, but now in packets: four channels, each holding <em>slots</em>
+          packets, and four sources each pushing two packets. At two slots per buffer the ring holds exactly the eight
+          packets in flight, plain injection fills every buffer at once and deadlocks at cycle 9 (8/8 occupied). Switch
+          the rule — inject only when two slots are still free — and the same load leaves one packet-sized hole in the
+          ring forever, occupancy settles at 4/8, and the ring keeps turning; the price is 200 blocked injection
+          attempts over 100 cycles.
+        </p>
+        <p>
+          At three or four slots per buffer plain injection also survives, but only because this particular load fits —
+          exactly the “buffers move the threshold” effect from 5.4.1. Bubble's real value is that it stays safe at the
+          smallest buffer, by paying in injection delay instead of in buffer area.
+        </p>
+      {:else}
+        <p>
+          和 5.4.1 是同一笔资源账，只是单位换成包：四条信道、每条放 <em>slots</em> 个包，四个源各推两个包。
+          2 包/缓冲时，环的容量正好等于在途的 8 个包，普通注入会同时把每个缓冲填满，第 9 拍死锁（占用 8/8）。
+          换成气泡规则——只在目标缓冲还留两个包位时才注入——同一负载会永远在环里留出一个包大小的空位，
+          占用稳定在 4/8，环持续转动；代价是 100 拍里有 200 次注入被拦下。
+        </p>
+        <p>
+          缓冲加到 3 或 4 个时，普通注入也能活下来，但那只是因为“这批负载装得下”——正是 5.4.1 里“缓冲只是把阈值往后推”的同一件事。
+          气泡的真正价值是在最小缓冲下仍然安全，代价不是面积，而是注入被延后。
+        </p>
+      {/if}
+    </div>
 
     <div class="prose">
       {#if en}
@@ -309,30 +407,69 @@
           credit for. The count is not a comfort knob; it is set by the round trip of the credit. If a link is eight
           cycles away and the buffer holds fewer than eight flits, the link idles for part of every round trip.
         </p>
+        <p>
+          In one line: sustained rate = min(1, depth / round trip). At a round trip of eight, depth 2 reaches 25%,
+          depth 4 reaches 50%, and depth 8 is the first one at 100% (deeper buys nothing). That is “size the buffer to
+          the bandwidth-delay product” quantified — and it is also why big buffers are not always good: they pay off on
+          long, slow links and are just area on short ones.
+        </p>
       {:else}
         <p>
           流控的另一半是反压：下游没空间时，上游怎么知道。片上网络通常用 credit——下游每消费一个 flit 回送一个额度，
           上游只有拿到额度才敢发。额度不是舒适度旋钮，它由 credit 的往返决定：
           链路八拍之外、缓冲却装不下八个 flit 时，链路在每次往返里都会空转一段。
         </p>
+        <p>
+          写成公式就是：可持续速率 = min(1, 深度 / 往返拍数)。往返 8 拍时，深度 2 只能跑到 25%、深度 4 是 50%、
+          深度 8 才 100%（再深没有额外收益）。这就是“缓冲按带宽延迟积配”的量化版本，也是为什么大缓冲不总是好：
+          它只在长链路、高往返时才有用，短链路上只是面积。
+        </p>
       {/if}
     </div>
 
     <Figure
-      no={t('图 5.5', 'Figure 5.5')}
+      no={t('图 5.6', 'Figure 5.6')}
       caption={t(
-        '往返 8 拍时，缓冲深度与可持续速率的对应。深度到 8 才吃满一条链路——这就是“缓冲按 BDP 配”的量化版本。',
-        'With an eight-cycle round trip, sustained rate against buffer depth. Depth eight is where the link finally saturates — the quantitative version of “size the buffer to the bandwidth-delay product”.'
+        '左边是 credit 的一次往返：数据往前走 8 拍，额度沿反方向回来，这一来一回就是 8 拍；右边是缓冲深度与可持续速率的关系，深度到 8 才吃满一条链路——这就是“缓冲按 BDP 配”的量化版本。',
+        'Left: one credit round trip — data goes forward for eight cycles and the credit comes back the other way, so the loop is eight cycles. Right: sustained rate against buffer depth; depth eight is where the link finally saturates — the quantitative version of “size the buffer to the bandwidth-delay product”.'
       )}
     >
-      <div class="credits">
-        {#each creditRows as row}
-          <div class="credit-row">
-            <span class="cr-k mono">{t(`深度 ${row.depth}`, `depth ${row.depth}`)}</span>
-            <span class="cr-bar"><i style={`width:${row.rate * 100}%`}></i></span>
-            <span class="cr-v mono">{(row.rate * 100).toFixed(0)}%</span>
-          </div>
-        {/each}
+      <div class="credit-wrap">
+        <svg class="credit-art" viewBox="0 0 240 120" fill="none" aria-hidden="true">
+          <rect x="12" y="44" width="70" height="32" rx="7" class="rtr" />
+          <text x="47" y="63" class="rlbl" text-anchor="middle">{t('发送端', 'sender')}</text>
+          <rect x="158" y="44" width="70" height="32" rx="7" class="rtr" />
+          <text x="193" y="63" class="rlbl" text-anchor="middle">{t('接收端', 'receiver')}</text>
+
+          {#each [0, 1, 2] as k}
+            <rect x={96 + k * 12} y="42" width="9" height="8" rx="2" class="flit" />
+          {/each}
+
+          <path d="M84 58H152" class="fwd" marker-end="url(#cr-fwd)" />
+          <text x="118" y="42" class="cap" text-anchor="middle">{t('数据（每拍 1 flit）', 'data (1 flit/cycle)')}</text>
+
+          <path d="M152 92H84" class="back" marker-end="url(#cr-back)" />
+          <text x="118" y="104" class="cap" text-anchor="middle">{t('credit 回流 · 往返 8 拍', 'credits return · round trip 8')}</text>
+
+          <defs>
+            <marker id="cr-fwd" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#2f5d62" />
+            </marker>
+            <marker id="cr-back" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#b98a63" />
+            </marker>
+          </defs>
+        </svg>
+
+        <div class="credits">
+          {#each creditRows as row}
+            <div class="credit-row">
+              <span class="cr-k mono">{t(`深度 ${row.depth}`, `depth ${row.depth}`)}</span>
+              <span class="cr-bar"><i style={`width:${row.rate * 100}%`}></i></span>
+              <span class="cr-v mono">{(row.rate * 100).toFixed(0)}%</span>
+            </div>
+          {/each}
+        </div>
       </div>
     </Figure>
 
@@ -448,6 +585,55 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .credit-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .credit-art {
+    width: 100%;
+    height: auto;
+  }
+
+  .rtr {
+    fill: var(--card-2);
+    stroke: var(--line);
+  }
+
+  .rlbl {
+    font-family: 'Inter', sans-serif;
+    font-size: 8px;
+    fill: var(--ink-3);
+  }
+
+  .flit {
+    fill: var(--accent-soft);
+    stroke: #cfded9;
+  }
+
+  .fwd {
+    stroke: var(--accent);
+    stroke-width: 1.1;
+    fill: none;
+    color: var(--accent);
+  }
+
+  .back {
+    stroke: var(--gold);
+    stroke-width: 1.1;
+    stroke-dasharray: 4 3;
+    fill: none;
+    color: var(--gold);
+  }
+
+  .cap {
+    font-family: 'Inter', sans-serif;
+    font-size: 7px;
+    fill: var(--muted);
   }
 
   .credit-row {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RingView from './RingView.svelte';
   import { makeRing, tickRing, runRing, totalBuffered, transferLatency, type RingState } from '../../lib/noc/flow';
   import { lang, t } from '../../lib/lang.svelte';
 
@@ -44,6 +45,18 @@
 
   const deadlocked = $derived(view.stuck >= 6);
   const finished = $derived(!ring.respawn && view.inFlight === 0);
+
+  const ringChannels = $derived(
+    view.channels.map((c, i) => ({
+      from: c.from,
+      to: c.to,
+      used: c.bufs.reduce((n, b) => n + b.length, 0),
+      capacity: (mode === 'dateline' ? 2 : 1) * depth,
+      index: i
+    }))
+  );
+
+  const datelineIndex = $derived(mode === 'dateline' ? ring.dateline : null);
 
   const latency = $derived(
     (['sf', 'vct', 'wh'] as const).map((m) => ({ id: m, cycles: transferLatency(m, 3, 4) }))
@@ -92,6 +105,21 @@
       {t('跑到底', 'Run')}
     </button>
     <button class="btn small ghost" onclick={rebuild}>{t('重置', 'Reset')}</button>
+  </div>
+
+  <div class="topology">
+    <RingView
+      channels={ringChannels}
+      dateline={datelineIndex}
+      {deadlocked}
+      height={240}
+    />
+    <p class="topo-note">
+      {t(
+        '四个路由器首尾相接，每条箭头是一条单向信道；箭头越粗越红，说明这条信道的缓冲越满，旁边数字是“已用/容量”。',
+        'Four routers in a loop; each arrow is one direction of a channel. Thicker and redder means a fuller buffer, and the number is used/capacity.'
+      )}
+    </p>
   </div>
 
   <div class="ring">
@@ -180,6 +208,19 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .topology {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .topo-note {
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: var(--muted);
+    text-align: center;
   }
 
   .chan {
