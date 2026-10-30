@@ -43,7 +43,7 @@
         {t('维序（XY）4 转向', 'dimension order (4 turns)')}
       </button>
       <button class:active={turns.length === NEGATIVE_FIRST.length && NEGATIVE_FIRST.every((x) => turns.includes(x))} onclick={() => preset(NEGATIVE_FIRST)}>
-        {t('负向优先 4 转向', 'negative-first (4 turns)')}
+        {t('负向优先 6 转向', 'negative-first (6 turns)')}
       </button>
       <button class:active={turns.length === ALL_TURNS.length} onclick={() => preset([...ALL_TURNS])}>
         {t('全部 8 转向', 'all eight turns')}

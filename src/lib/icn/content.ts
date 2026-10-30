@@ -52,8 +52,8 @@ export const ICN_CHAPTERS: Chapter[] = [
     pages: '103–144',
     status: 'ready',
     part: 'deadlock',
-    blurb: '确定性、部分自适应、完全自适应、最大自适应、非最小与回溯：每一类的自由度，都由死锁条件买账。',
-    blurbEn: 'Deterministic, partially adaptive, fully adaptive, maximally adaptive, non-minimal and backtracking: each step in freedom is paid for with a deadlock condition.'
+    blurb: '确定性、无意识、部分/完全/最大自适应、非最小与回溯：六档自由度，每一档都由死锁条件买账，最后由资源分配与选择函数落地。',
+    blurbEn: 'Deterministic, oblivious, partially/fully/maximally adaptive, non-minimal and backtracking: six levels of freedom, each paid for with a deadlock condition, then landed by resource allocation and the selection function.'
   },
   {
     n: 5,

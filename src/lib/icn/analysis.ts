@@ -30,8 +30,12 @@ export const turnAnalysis = (g: Graph, turns: Turn[], vcPlans: Turn[][]): TurnAn
   };
 };
 
-/** Two acyclic turn sets that are each safe on their own, stacked with escalation only upward. */
-export const NEGATIVE_FIRST: Turn[] = ['EN', 'ES', 'NW', 'SW'];
+/**
+ * Two acyclic turn sets that are each safe on their own, stacked with escalation only upward.
+ * Turn labels are travel directions: "EN" is a hop east followed by a hop north.
+ * Negative-first takes the negative hops first, so it forbids E→S and N→W — the other two.
+ */
+export const NEGATIVE_FIRST: Turn[] = ['EN', 'WN', 'WS', 'NE', 'SE', 'SW'];
 export const XY_TURNS: Turn[] = ['EN', 'ES', 'WN', 'WS'];
 
 export const TURN_BY_ID: Record<string, { zh: string; en: string }> = {
