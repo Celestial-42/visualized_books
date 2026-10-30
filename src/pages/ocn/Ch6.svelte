@@ -3,6 +3,7 @@
   import Figure from '../../components/Figure.svelte';
   import Quiz from '../../components/Quiz.svelte';
   import RouterLab from '../../components/noc/RouterLab.svelte';
+  import AllocatorOrgLab from '../../components/noc/AllocatorOrgLab.svelte';
   import { lang, t } from '../../lib/lang.svelte';
   import { navigate } from '../../lib/router.svelte';
   import { pipeline, zeroLoadLatency } from '../../lib/noc/router';
@@ -149,7 +150,8 @@
         'Relative crossbar area grows with the square of the port count, and speedup multiplies it again. That is why 64-port Swizzle needed a different implementation, and why Sparc T5’s 8×9 crossbar already rivals one and a half L3 banks in area.'
       )}
     >
-      <table class="table">
+      <div class="table-wrap">
+        <table class="table">
         <thead>
           <tr>
             <th>{t('端口数', 'Ports')}</th>
@@ -168,7 +170,8 @@
             </tr>
           {/each}
         </tbody>
-      </table>
+        </table>
+      </div>
     </Figure>
 
     <div class="prose">
@@ -249,6 +252,44 @@
     </div>
 
     <div class="prose">
+      <h3><span class="h-no">6.4.2</span>{t('分配器组织：路由函数返回几个候选，决定它长什么样', 'Allocator organisation: how many candidates decide its shape')}</h3>
+      {#if en}
+        <p>
+          A deterministic routing function names exactly one output, so the allocator only has to bid for it. An adaptive
+          function may name several, and that choice is what shapes the hardware. Three organisations are common: bid for
+          one candidate and reroute when the bid loses (cheap logic, unpredictable latency); let the routing function hand
+          back one candidate chosen on the fly; or offer every candidate at once, folding the choice into the first
+          arbitration stage.
+        </p>
+        <p>
+          The trade is visible in the fan-in. With V virtual channels per input and c candidates, offering everything turns
+          the first stage into V×c : 1 arbiters, and buys the best matching a single round can reach. Bidding one
+          candidate keeps the arbiter narrow and pays with retries.
+        </p>
+      {:else}
+        <p>
+          确定性路由只给出一个输出，分配器只为它投标就够了；自适应路由可能给出好几个，而“给几个”直接决定硬件长什么样。
+          常见三种组织：只投一个候选、失败再重路由（逻辑最省、延迟不确定）；让路由函数当场先定一个（折中）；
+          把所有候选一起投出去，把“选哪个”并进第一级仲裁。
+        </p>
+        <p>
+          取舍体现在扇入上：每个输入有 V 条 VC、c 个候选时，“全投”会把第一级变成 V×c : 1 的仲裁器，
+          换来的是一轮分配就能达到的最好匹配；“只投一个”让仲裁器保持窄，代价是可能要重试。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 6.4', 'Figure 6.4')}
+      caption={t(
+        '三种组织方式在 4 端口、每端口 3 条 VC 下的结构，以及同一张“每 VC 两个候选”矩阵上能配到的对数。候选数 c 可调，扇入随之变化。',
+        'The three organisations for a four-port router with three VCs per port, and how many pairs each can match on the same “two candidates per VC” matrix. Drag c to watch the fan-in move.'
+      )}
+    >
+      <AllocatorOrgLab />
+    </Figure>
+
+    <div class="prose">
       <h3><span class="h-no">6.5</span>{t('三种流水线，三个数字', 'Three pipelines, three numbers')}</h3>
       {#if en}
         <p>
@@ -266,7 +307,7 @@
     </div>
 
     <Figure
-      no={t('图 6.4', 'Figure 6.4')}
+      no={t('图 6.5', 'Figure 6.5')}
       caption={t(
         '三种配置下，4 跳、4 flit 的包的零负载延迟。全部由上面的流水线级数算出：hops × 每跳 + 序列化。',
         'Zero-load latency of a 4-hop, 4-flit packet under three configurations — all computed as hops × per-hop + serialisation.'
@@ -364,6 +405,14 @@
 </div>
 
 <style>
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .table-wrap .table {
+    min-width: 480px;
+  }
+
   .pipe-art svg {
     width: 100%;
     height: auto;

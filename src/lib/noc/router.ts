@@ -140,6 +140,50 @@ export const allocate = (req: boolean[][], order: 'input' | 'output'): Matching 
   };
 };
 
+/**
+ * How the allocator has to be organised, which depends on how many candidates the
+ * routing function hands it: one output, one chosen on the fly, or all of them.
+ */
+export type OrgMode = 'single' | 'retry' | 'multi';
+
+export type OrgRow = {
+  mode: OrgMode;
+  stage1Count: number;
+  stage1FanIn: number;
+  stage2Count: number;
+  stage2FanIn: number;
+  worstAttempts: number;
+};
+
+export const allocatorOrganization = (ports: number, vcs: number, candidates: number): OrgRow[] => {
+  const single: OrgRow = {
+    mode: 'single',
+    stage1Count: ports,
+    stage1FanIn: vcs,
+    stage2Count: ports,
+    stage2FanIn: ports,
+    worstAttempts: 1
+  };
+  return [
+    single,
+    {
+      // routing returns one candidate; a lost arbitration means routing again
+      ...single,
+      mode: 'retry',
+      worstAttempts: Math.max(1, candidates)
+    },
+    {
+      // every candidate is offered: the first stage fan-in grows with the candidates
+      mode: 'multi',
+      stage1Count: ports,
+      stage1FanIn: vcs * Math.max(1, candidates),
+      stage2Count: ports,
+      stage2FanIn: ports,
+      worstAttempts: 1
+    }
+  ];
+};
+
 export type PipelineSpec = {
   vcs: number;
   /** arbitration and VC allocation in the same cycle */

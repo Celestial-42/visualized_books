@@ -4,6 +4,7 @@
   import Quiz from '../../components/Quiz.svelte';
   import ProtoLab from '../../components/noc/ProtoLab.svelte';
   import ProtocolDeadlockLab from '../../components/noc/ProtocolDeadlockLab.svelte';
+  import HierarchyLab from '../../components/noc/HierarchyLab.svelte';
   import { lang, t } from '../../lib/lang.svelte';
   import { navigate } from '../../lib/router.svelte';
 
@@ -98,6 +99,42 @@
     </Figure>
 
     <div class="prose">
+      <h3><span class="h-no">2.1.2</span>{t('cache 层级：私有还是共享，决定了谁上网', 'Cache hierarchy: private or shared decides who enters the network')}</h3>
+      {#if en}
+        <p>
+          The hierarchy is a traffic filter before it is anything else. With a private L2, an L1 miss is absorbed locally:
+          only a miss that the private L2 also misses reaches the network, and that one costs two traversals — request
+          out, data back. The router sees a single client (the L2), so its injection port is never shared.
+        </p>
+        <p>
+          A shared L2 uses storage better and puts less pressure on off-chip bandwidth, but every L1 miss has to cross the
+          network to reach the bank that owns the address, and both the L1 and the L2 share the router’s injection and
+          ejection ports. The lab prices both with the same model: what changes is who filters the traffic and how many
+          clients one port serves.
+        </p>
+      {:else}
+        <p>
+          层级首先是一道流量过滤器。用私有 L2 时，L1 Miss 先在本地被吸收：只有“私有 L2 也没命中”的请求才会上网，
+          而它要花两趟穿越——请求出去、数据回来。路由器只面对 L2 一个客户端，注入端口不需要共享。
+        </p>
+        <p>
+          共享 L2 更省存储、也减轻片外带宽压力，但每一次 L1 Miss 都要过网去访问持有该地址的 bank，
+          而且 L1 与 L2 共享路由器的注入/弹出端口。下面用同一个模型给两者算账：变的只是“谁来过滤流量”和“一个端口服务几个客户端”。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 2.3', 'Figure 2.3')}
+      caption={t(
+        '私有 vs 共享 L2 的流量账（每千次 L1 访问、每笔请求 1 flit、数据 4 flit）。拖动命中率看两者何时互换优劣：命中率差得越大，共享 L2 省下的片外访问越多，但上网的穿越次数始终是每次 Miss 两趟。',
+        'The traffic bill for private versus shared L2, per 1000 L1 accesses with one request flit and four data flits. Drag the hit rates to see them trade places: the bigger the hit-rate gap, the more off-chip traffic the shared cache saves — but it always sends two traversals per miss.'
+      )}
+    >
+      <HierarchyLab />
+    </Figure>
+
+    <div class="prose">
       <h3><span class="h-no">2.2</span>{t('home 节点与 MSHR', 'The home node and its MSHRs')}</h3>
       {#if en}
         <p>
@@ -174,7 +211,7 @@
     </div>
 
     <Figure
-      no={t('图 2.3', 'Figure 2.3')}
+      no={t('图 2.4', 'Figure 2.4')}
       caption={t(
         '从协议到网络：上层决定消息，接口固定格式，网络只负责按时送到。虚拟网络把不同类别的消息分开排队。',
         'From protocol to network: the upper layer decides the messages, the interface fixes the format, the network only has to deliver them. Virtual networks keep the classes in separate queues.'

@@ -65,7 +65,8 @@
     </div>
   </div>
 
-  <table class="table cases">
+  <div class="table-wrap">
+    <table class="table cases">
     <thead>
       <tr>
         <th>{t('芯片', 'Chip')}</th>
@@ -92,10 +93,19 @@
         </tr>
       {/each}
     </tbody>
-  </table>
+    </table>
+  </div>
 </div>
 
 <style>
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .table-wrap .table {
+    min-width: 640px;
+  }
+
   .lab {
     display: flex;
     flex-direction: column;

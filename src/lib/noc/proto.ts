@@ -125,6 +125,59 @@ export const PROTOCOLS: { id: Protocol; label: string; labelEn: string }[] = [
  * by a request that is itself waiting for its reply. If the two classes share a
  * virtual network, both directions exist and the protocol closes a cycle.
  */
+export type HierarchyConfig = {
+  /** L1 misses per 1000 L1 accesses */
+  misses: number;
+  /** hit rate of the private L2 */
+  privateHit: number;
+  /** hit rate of the shared L2 (bigger, so higher) */
+  sharedHit: number;
+};
+
+export type HierarchyRow = {
+  id: 'private' | 'shared';
+  /** network traversals per 1000 L1 accesses */
+  traversals: number;
+  /** flits moved by the network per 1000 L1 accesses */
+  flits: number;
+  /** memory accesses that leave the chip */
+  offChip: number;
+  /** how many clients share one router injection/ejection port */
+  portClients: number;
+};
+
+/**
+ * Cache hierarchy as a traffic filter. A private L2 absorbs hits locally, so only
+ * its own misses enter the network; a shared L2 is bigger (fewer off-chip trips)
+ * but every L1 miss has to cross the network to reach its bank.
+ */
+export const hierarchyCost = (cfg: HierarchyConfig): HierarchyRow[] => {
+  const miss = cfg.misses;
+  const REQ = 1;
+  const DATA = 4;
+
+  const privateTraversals = miss * (1 - cfg.privateHit) * 2; // request out + data back
+  const sharedTraversals = miss * 2; // every L1 miss crosses the network
+
+  const perTransaction = REQ + DATA;
+  return [
+    {
+      id: 'private',
+      traversals: privateTraversals,
+      flits: privateTraversals * perTransaction,
+      offChip: miss * (1 - cfg.privateHit),
+      portClients: 1
+    },
+    {
+      id: 'shared',
+      traversals: sharedTraversals,
+      flits: sharedTraversals * perTransaction,
+      offChip: miss * (1 - cfg.sharedHit),
+      portClients: 2
+    }
+  ];
+};
+
 export type MsgClass = 'req' | 'fwd' | 'inv' | 'ack' | 'data';
 
 export type ClassEdge = {
