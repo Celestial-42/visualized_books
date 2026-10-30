@@ -99,6 +99,13 @@
           <em>waiting for the switch</em>, <em>active</em>. Credit counters live here too, and they are why backpressure
           costs a few flops per hop.
         </p>
+        <p>
+          Where the buffer sits is a separate choice. Dedicated per input port per VC is easy to write and verify, but
+          the buffers of an idle port cannot help a busy one. A shared buffer pools all inputs into one store, saving
+          thirty to fifty percent of the area at the cost of address management and more read/write ports. Between them
+          sits sharing across VCs inside one port. The difference is not “how big”, it is “whose idle space can be
+          borrowed”.
+        </p>
       {:else}
         <p>
           典型路由器里，缓冲占面积的四到六成，也是功耗的大头。仅这一条就解释了大部分架构选择：
@@ -107,6 +114,12 @@
         <p>
           输入 VC 还带一个小状态机：<em>空闲</em>、<em>路由中</em>、<em>等 VC</em>、<em>等开关</em>、<em>活跃</em>。
           credit 计数器也在这里，这就是反压为什么每跳要花几个触发器。
+        </p>
+        <p>
+          缓冲怎么摆是另一个选择。最直接是“每个输入端口、每条 VC 各一块”，好写也好验，但流量偏向某一个端口时，
+          别的端口的缓冲只能闲着。另一种是共享缓冲：所有输入共用一个存储池、按需分配，面积能省下三到五成，
+          代价是地址管理与更多的读写端口。介于两者之间的是“端口内跨 VC 共享”。三种方案的区别不在“多大”，
+          而在“忙的时候谁能借用谁的空闲”。
         </p>
       {/if}
     </div>
@@ -205,6 +218,35 @@
     >
       <RouterLab />
     </Figure>
+
+    <div class="prose">
+      <h3><span class="h-no">6.4.1</span>{t('wavefront：用对角线再抢回一对', 'Wavefront: winning a match back with diagonals')}</h3>
+      {#if en}
+        <p>
+          A separable allocator commits to its first-phase choices and cannot undo them. A wavefront allocator exploits a
+          property of the matrix instead: requests with the same (input + output) mod N never share an input or an
+          output, so one diagonal of the matrix can be granted in a single cycle with no conflict at all. Walk the
+          diagonals in order and you get a maximal matching per pass; rotate the starting diagonal and take three
+          passes, and the best of them usually beats the two-phase greedy.
+        </p>
+        <p>
+          The lab’s default matrix is exactly that case: separable gets three pairs, the three wavefront passes find
+          three, four and three, and the optimum is four. The extra pair was hidden in the choice the first phase made
+          and could not take back.
+        </p>
+      {:else}
+        <p>
+          分离式分配器一旦在第一轮做了选择就不能反悔。wavefront 利用的是矩阵本身的性质：
+          (输入 + 输出) mod N 相同的请求既不会抢同一个输入、也不会抢同一个输出，
+          所以一条对角线可以在同一拍里全部批准，完全无冲突。按对角线顺序扫一遍就是一次极大匹配；
+          换一个起始对角线再扫，三轮里取最好的那个，通常就能超过两轮贪心。
+        </p>
+        <p>
+          实验里的默认矩阵正是这种情形：分离式配到 3 对，wavefront 三轮分别配到 3 / 4 / 3 对，最优是 4 对。
+          多出来的那一对，就藏在第一轮做了一个没办法撤回的选择里。
+        </p>
+      {/if}
+    </div>
 
     <div class="prose">
       <h3><span class="h-no">6.5</span>{t('三种流水线，三个数字', 'Three pipelines, three numbers')}</h3>

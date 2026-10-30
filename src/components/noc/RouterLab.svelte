@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { allocate, arbiterTrace, maxMatching, pipeline, zeroLoadLatency } from '../../lib/noc/router';
+  import { allocate, allocateWavefront, arbiterTrace, maxMatching, pipeline, zeroLoadLatency } from '../../lib/noc/router';
   import { lang, t } from '../../lib/lang.svelte';
 
   const N = 4;
@@ -15,6 +15,7 @@
   let vcs = $state(2);
 
   const matching = $derived(allocate(req, 'input'));
+  const wave = $derived(allocateWavefront(req, 3));
   const best = $derived(maxMatching(req));
   const requests = $derived(
     Array.from({ length: 6 }, (_, tick) => Array.from({ length: N }, (_, i) => (i + tick) % N !== 3))
@@ -55,14 +56,15 @@
 
     <p class="result">
       {t(
-        `两轮贪心匹配 ${matching.pairs.length} 对，而这张矩阵的最优匹配是 ${best} 对` +
-          `（未匹配输入 ${matching.unmatchedIn.length}，未匹配输出 ${matching.unmatchedOut.length}）`,
-        `Two greedy rounds match ${matching.pairs.length}, while this matrix admits ${best}` +
-          ` (${matching.unmatchedIn.length} unmatched inputs, ${matching.unmatchedOut.length} unmatched outputs)`
+        `两轮贪心（separable）匹配 ${matching.pairs.length} 对 · wavefront 三轮最好 ${wave.best.pairs.length} 对 · 最优 ${best} 对`,
+        `Two greedy rounds match ${matching.pairs.length} · wavefront over three passes reaches ${wave.best.pairs.length} · optimum ${best}`
       )}
     </p>
     <p class="match-list mono">
-      {matching.pairs.map(([a, b]) => `I${a}→O${b}`).join('  ') || '—'}
+      {t('separable', 'separable')}: {matching.pairs.map(([a, b]) => `I${a}→O${b}`).join('  ') || '—'}
+    </p>
+    <p class="match-list mono">
+      {t('wavefront', 'wavefront')}（{wave.counts.join(' / ')}）: {wave.best.pairs.map(([a, b]) => `I${a}→O${b}`).join('  ')}
     </p>
   </div>
 

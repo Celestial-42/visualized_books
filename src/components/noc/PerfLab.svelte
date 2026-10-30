@@ -21,10 +21,13 @@
 
   const curve = $derived(delayCurve(p.baseLatency));
   const ideal = $derived(curve.map((c) => ({ load: c.load, latency: idealLatency(p.baseLatency, c.load) })));
+  // an ideal fabric has infinite bandwidth: its latency never leaves the zero-load value
+  const fabric = $derived(curve.map((c) => ({ load: c.load, latency: p.baseLatency })));
   const maxLat = $derived(Math.max(...curve.map((c) => c.latency), ...ideal.map((c) => c.latency)));
   const toXY = (c: { load: number; latency: number }) => `${10 + c.load * 270},${104 - (c.latency / maxLat) * 84}`;
   const points = $derived(curve.map(toXY).join(' '));
   const idealPoints = $derived(ideal.map(toXY).join(' '));
+  const fabricPoints = $derived(fabric.map(toXY).join(' '));
 
   const info = $derived(TRAFFICS.find((x) => x.id === traffic) ?? TRAFFICS[0]);
   const formula = $derived(meshHopFormula(4));
@@ -71,6 +74,7 @@
         <path d="M10 104H282" class="axis" />
         <path d="M10 104V12" class="axis" />
         <polyline points={idealPoints} class="ideal" />
+        <polyline points={fabricPoints} class="fabric" />
         <polyline points={points} class="curve" />
         <text x="146" y="114" class="axis-l" text-anchor="middle">{t('注入率 / 饱和注入率', 'load / saturation')}</text>
         <text x="6" y="10" class="axis-l">{t('延迟', 'latency')}</text>
@@ -78,6 +82,7 @@
       <p class="legend">
         <span class="sw curve-sw"></span>{t('本页模型（M/D/1）', 'this page’s model (M/D/1)')}
         <span class="sw ideal-sw"></span>{t('纯排队理想 1/(1−ρ)', 'pure queue 1/(1−ρ)')}
+        <span class="sw fabric-sw"></span>{t('理想互连（带宽无限）', 'ideal fabric (infinite bandwidth)')}
       </p>
       <p class="viz-note">
         {t(
@@ -179,6 +184,13 @@
     fill: none;
   }
 
+  .fabric {
+    stroke: var(--st-e);
+    stroke-width: 1;
+    stroke-dasharray: 1 3;
+    fill: none;
+  }
+
   .legend {
     display: flex;
     align-items: center;
@@ -199,6 +211,10 @@
 
   .ideal-sw {
     background: var(--gold);
+  }
+
+  .fabric-sw {
+    background: var(--st-e);
   }
 
   .axis-l {

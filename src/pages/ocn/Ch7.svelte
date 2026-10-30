@@ -52,8 +52,8 @@
     <Figure
       no={t('图 7.1', 'Figure 7.1')}
       caption={t(
-        '换拓扑与流量模式，看链路热力图与曲线怎么变。饱和注入率 = 1 / 最忙链路的负载，全部由逐对路由累加得出；虚线是纯排队理想 1/(1−ρ)，实线是本页模型。',
-        'Change topology and pattern to watch the heat map and the curve move. Saturation is 1 / busiest-link load, accumulated by routing every pair; the dashed line is the pure queue 1/(1−ρ), the solid one is this page’s model.'
+        '换拓扑与流量模式，看链路热力图与曲线怎么变。饱和注入率 = 1 / 最忙链路的负载，全部由逐对路由累加得出；实线是本页模型，虚线是纯排队理想 1/(1−ρ)，点线是带宽无限时的理想互连。',
+        'Change topology and pattern to watch the heat map and the curve move. Saturation is 1 / busiest-link load, accumulated by routing every pair; the solid line is this page’s model, the dashed one is the pure queue 1/(1−ρ), and the dotted one is an ideal fabric with infinite bandwidth.'
       )}
     >
       <PerfLab />
@@ -74,6 +74,22 @@
           折算成每包注入是 2.13，于是饱和点在 0.469 包/节点/周期。换成邻居流量只抬到 0.500——
           每跳虽短，但流量仍然从中间过；转置让两条交叉带更热，掉到 0.333；热点则直接塌到 0.083。
           拓扑一点没变，变的只是流量。
+        </p>
+      {/if}
+    </div>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          The third line in the plot is the book’s <b>ideal interconnect</b>: infinite bandwidth, so its latency never
+          rises no matter the load. It is not a design target — it is a ruler. The distance between the flat line and
+          the real curve is exactly what the network topology, buffers and flow control are paying for; a good design
+          keeps that gap small until it gets close to saturation.
+        </p>
+      {:else}
+        <p>
+          图里第三条线是书里的<b>理想互连</b>：带宽无限，所以无论负载多高延迟都不涨。它不是设计目标，而是一把尺子——
+          平线与真实曲线之间的距离，就是拓扑、缓冲与流控正在付出的代价。好的设计会在接近饱和之前一直把这个差距压得很小。
         </p>
       {/if}
     </div>
@@ -128,6 +144,21 @@
         {t(
           '平均跳数可以先用手算：k×k mesh 每个维度 E|d| = (k²−1)/3k，二维相加即可。图和公式对不上，先别跑仿真——那说明图建错了。',
           'average hops can be checked by hand: on a k×k mesh each dimension has E|d| = (k²−1)/3k, and two dimensions add. If the formula and the graph disagree, fix the graph before running a simulation.'
+        )}
+      </div>
+
+      <h4>{t('功耗与面积模型', 'Power and area models')}</h4>
+      <p>
+        {t(
+          '周期级仿真只给时间和 flit，不给焦耳和平方毫米。所以评估里还要一套解析的功耗/面积模型（Orion、DSENT 这一类）：把路由器拆成缓冲、交叉开关、链路三块，用每 bit 的能量系数乘上访问次数。片上短链路的能量在 0.1–0.5 pJ/bit 量级，并且大部分花在驱动线和重复器上；路由器内部一次 flit 的处理往往比走一毫米线还贵。',
+          'A cycle-level simulator gives time and flits, not joules or square millimetres. So evaluation also needs an analytical power/area model (Orion, DSENT and friends): split the router into buffers, crossbar and links, and multiply per-bit energy by access counts. On-chip links land around 0.1–0.5 pJ/bit, mostly in drivers and repeaters — and one flit passing through a router often costs more than a millimetre of wire.'
+        )}
+      </p>
+      <div class="note">
+        <b>{t('为什么面积模型也要解析：', 'Why area is analytical too: ')}</b>
+        {t(
+          '缓冲是 SRAM（面积随深度线性、每 bit 便宜），交叉开关是逻辑（面积随端口数平方、每 bit 贵）。同一个总预算下，把面积从交叉开关挪到缓冲，通常能换来更高的吞吐——第 6 章那张 P² 表就是这件事的来源。',
+          'buffers are SRAM (linear in depth, cheap per bit) while the crossbar is logic (area with the square of the port count, expensive per bit). Moving area from crossbar to buffers usually buys throughput — that is where the P² table in Chapter 6 comes from.'
         )}
       </div>
     </div>

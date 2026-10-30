@@ -172,7 +172,38 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">8.4</span>{t('自测', 'Check yourself')}</h3>
+      <h3><span class="h-no">8.4</span>{t('这 16 个案例合起来说了什么', 'What the sixteen cases say together')}</h3>
+      {#if en}
+        <p>
+          Read as a set rather than one by one, the cases answer the book’s four layers in order. <b>Topology</b> is a
+          mesh unless the terminal count is small (Sparc T5) or the workload is a ring-shaped pipeline (Cell) or
+          cluster-local (KAIST). <b>Routing</b> is dimension order almost everywhere, with multicast where the workload
+          is a broadcast (Eyeriss, Broadcast NoC). <b>Flow control</b> is wormhole, and virtual channels appear only when
+          one physical network must carry several message classes (Anton 2, Tilera). <b>Microarchitecture</b> is a short
+          pipeline, single stage on straight paths in Tilera, and no VCs at all in Piton and KNL.
+        </p>
+        <p>
+          The one thing every case shares is that its network is a consequence, not a starting point. The chip’s
+          constraints — data reuse, coherence, pin budget, power — pick the topology, and the topology picks everything
+          else.
+        </p>
+      {:else}
+        <p>
+          把这 16 个案例当成一组来看，它们按顺序回答了书的四层问题。<b>拓扑</b>：除非终端很少（Sparc T5）、
+          负载本来就是环形流水（Cell）、或者流量高度簇内（KAIST），否则就是 mesh。
+          <b>路由</b>：几乎处处是维序；只有当负载本身是广播时（Eyeriss、Broadcast NoC）才上多播。
+          <b>流控</b>：wormhole 是默认；虚拟信道只出现在“一张物理网必须承载多类消息”的地方（Anton 2、Tilera）。
+          <b>微架构</b>：流水线都很短，Tilera 直行只花一级，Piton 与 KNL 干脆没有 VC。
+        </p>
+        <p>
+          所有案例唯一的共同点，是网络都是“结果”而不是“起点”：芯片的约束——数据复用、一致性、引脚预算、功耗——
+          先选出拓扑，拓扑再决定其余一切。
+        </p>
+      {/if}
+    </div>
+
+    <div class="prose">
+      <h3><span class="h-no">8.5</span>{t('自测', 'Check yourself')}</h3>
       <Quiz
         questions={[
           {

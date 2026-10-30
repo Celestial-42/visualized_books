@@ -25,6 +25,22 @@
 
   const RTT = 8;
   const creditRows = [2, 4, 8, 16].map((d) => ({ depth: d, rate: creditThroughput(d, RTT) }));
+
+  /** implementation cost of buffering and of the reverse wires that carry credits */
+  const implRows = [
+    { ports: 4, vcs: 2, depth: 4 },
+    { ports: 4, vcs: 2, depth: 8 },
+    { ports: 5, vcs: 4, depth: 8 },
+    { ports: 7, vcs: 4, depth: 16 }
+  ].map((c) => {
+    const bits = Math.ceil(Math.log2(c.depth + 1));
+    return {
+      ...c,
+      bufferBits: c.ports * c.vcs * c.depth * 64,
+      creditWires: c.ports * c.vcs * bits,
+      onOffWires: c.ports * c.vcs
+    };
+  });
 </script>
 
 <div class="page">
@@ -474,7 +490,75 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">5.8</span>{t('应用特定网络：把时间也当成资源', 'Application-specific networks: schedule the time')}</h3>
+      <h3><span class="h-no">5.8</span>{t('实现代价：缓冲位数与反向信号线', 'Implementation cost: buffer bits and reverse wires')}</h3>
+      {#if en}
+        <p>
+          Two things are easy to forget when sizing. First, buffers are counted per port × per VC × depth × width, and
+          that product is why ports and VCs are the expensive knobs. Second, backpressure needs wires going the other
+          way: a credit counter of ⌈log₂(depth+1)⌉ bits per VC per port, or a single on/off bit if you are willing to
+          lose the exact count and accept coarser flow control.
+        </p>
+      {:else}
+        <p>
+          定尺寸时最容易漏掉两件事。第一，缓冲按“端口 × VC × 深度 × 位宽”相乘，所以端口和 VC 数才是贵的那两个旋钮。
+          第二，反压需要反向的线：每条 VC、每个端口 ⌈log₂(深度+1)⌉ 位 credit 计数，
+          或者退一步只给 1 位“能不能收”，流控更粗，但线少得多。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 5.7', 'Figure 5.7')}
+      caption={t(
+        '四种常见配置的缓冲位数与反向线数（数据位宽按 64 bit 计）。深度翻倍时缓冲线性涨，credit 线只涨 1 位；换成 on/off 信号则与深度无关。',
+        'Buffer bits and reverse wires for four common configurations at 64-bit links. Doubling depth doubles the buffer but adds one bit of credit; an on/off signal ignores depth altogether.'
+      )}
+    >
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{t('端口 × VC × 深度', 'ports × VCs × depth')}</th>
+              <th>{t('缓冲位数', 'buffer bits')}</th>
+              <th>{t('credit 线（位/VC/端口）', 'credit bits')}</th>
+              <th>{t('credit 线总数', 'credit wires')}</th>
+              <th>{t('on/off 线总数', 'on/off wires')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each implRows as row}
+              <tr>
+                <td class="num">{row.ports} × {row.vcs} × {row.depth}</td>
+                <td class="num">{row.bufferBits.toLocaleString()}</td>
+                <td class="num">{Math.ceil(Math.log2(row.depth + 1))}</td>
+                <td class="num">{row.creditWires}</td>
+                <td class="num">{row.onOffWires}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </Figure>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          Note what the last two columns say. Going from 4 to 7 ports with the same VCs and depth nearly doubles the
+          buffer; the reverse wires grow with ports × VCs and only logarithmically with depth. That asymmetry is why
+          architects spend effort on shared buffers and on narrow backpressure rather than on simply deepening queues —
+          and why the turnaround-time rule (“size the buffer to the credit round trip”) is a floor, not a target.
+        </p>
+      {:else}
+        <p>
+          看最后两列：端口从 4 加到 7、VC 与深度不变，缓冲几乎翻倍；反向线随“端口 × VC”增长，对深度只是对数依赖。
+          这种不对称正是为什么架构师会在共享缓冲和窄反压上花力气，而不是简单把队列做深——
+          也说明“按 credit 往返定缓冲”是一个下限，不是目标值。
+        </p>
+      {/if}
+    </div>
+
+    <div class="prose">
+      <h3><span class="h-no">5.9</span>{t('应用特定网络：把时间也当成资源', 'Application-specific networks: schedule the time')}</h3>
       <p>
         {t(
           '通用 NoC 用缓冲来协调竞争，代价是面积和不确定性。应用特定网络换个思路：既然通信图在编译期就知道，干脆把时间切成时隙，给每条流预定好（时隙 × 链路）。TDMA 风格的调度把仲裁、缓冲、甚至路由都省掉了，代价是没有突发余量——一个没按时刻表发车的核，会把整张表往后推。',
@@ -499,7 +583,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">5.9</span>{t('自测', 'Check yourself')}</h3>
+      <h3><span class="h-no">5.10</span>{t('自测', 'Check yourself')}</h3>
       <Quiz
         questions={[
           {
@@ -575,6 +659,14 @@
 </div>
 
 <style>
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .table-wrap .table {
+    min-width: 520px;
+  }
+
   .hol {
     display: grid;
     grid-template-columns: 1fr 1fr;

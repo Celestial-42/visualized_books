@@ -45,7 +45,42 @@ export const arbiterTrace = (kind: ArbiterId, requests: boolean[][], start = 0) 
 
 export type Matching = { pairs: [number, number][]; unmatchedIn: number[]; unmatchedOut: number[] };
 
-/** Maximum bipartite matching (augmenting paths) — the ceiling a separable allocator can miss. */
+/**
+ * Wavefront allocator: requests whose (input + output) mod N is the same cannot
+ * conflict, so one wavefront settles in a single cycle. Rotating the starting
+ * wavefront over a few passes finds matchings the two-pass greedy misses.
+ */
+export const allocateWavefront = (req: boolean[][], passes = 3) => {
+  const n = req.length;
+  const run = (offset: number): Matching => {
+    const inUse = new Array<boolean>(n).fill(false);
+    const outUse = new Array<boolean>(n).fill(false);
+    const pairs: [number, number][] = [];
+    for (let step = 0; step < n; step++) {
+      const wave = (step + offset) % n;
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < (req[i]?.length ?? 0); j++) {
+          if ((i + j) % n !== wave) continue;
+          if (!req[i][j] || inUse[i] || outUse[j]) continue;
+          inUse[i] = true;
+          outUse[j] = true;
+          pairs.push([i, j]);
+        }
+      }
+    }
+    return {
+      pairs: pairs.sort((a, b) => a[0] - b[0]),
+      unmatchedIn: inUse.map((t, i) => (t ? -1 : i)).filter((i) => i >= 0),
+      unmatchedOut: outUse.map((t, j) => (t ? -1 : j)).filter((j) => j >= 0)
+    };
+  };
+
+  const candidates = Array.from({ length: passes }, (_, p) => run(p));
+  const best = candidates.reduce((a, b) => (b.pairs.length > a.pairs.length ? b : a));
+  return { best, counts: candidates.map((c) => c.pairs.length) };
+};
+
+/** Maximum bipartite matching (augmenting paths) — the ceiling any allocator can reach. */
 export const maxMatching = (req: boolean[][]): number => {
   const ins = req.length;
   const outs = req[0]?.length ?? 0;

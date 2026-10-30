@@ -3,6 +3,7 @@
   import Figure from '../../components/Figure.svelte';
   import Quiz from '../../components/Quiz.svelte';
   import ProtoLab from '../../components/noc/ProtoLab.svelte';
+  import ProtocolDeadlockLab from '../../components/noc/ProtocolDeadlockLab.svelte';
   import { lang, t } from '../../lib/lang.svelte';
   import { navigate } from '../../lib/router.svelte';
 
@@ -56,6 +57,44 @@
       )}
     >
       <ProtoLab />
+    </Figure>
+
+    <div class="prose">
+      <h3><span class="h-no">2.1.1</span>{t('协议级死锁：请求在等回复，回复在等缓冲', 'Protocol-level deadlock: requests wait for replies, replies wait for buffers')}</h3>
+      {#if en}
+        <p>
+          Routing rules make a single network deadlock-free, but a coherence protocol can still close a cycle across
+          <em>message classes</em>. The shape is always the same: a reply (data or ack) needs a free input buffer; that
+          buffer is holding a request; the request is waiting for the very reply that cannot get in. Add the protocol’s
+          own dependencies — a read request is not finished until its data returns, a write until its acks return — and
+          you have a cycle that no amount of routing care can remove.
+        </p>
+        <p>
+          The fix is structural, not buffering: put requests and replies on different virtual networks so the
+          reply-to-request edge disappears. Chapter 7 turns this into the general rule that message classes get their
+          own virtual networks.
+        </p>
+      {:else}
+        <p>
+          路由规则可以让一张网无死锁，但一致性协议仍然能在<em>消息类别</em>之间绕出一个环。形状总是同一个：
+          回复（data / ack）需要一块空闲的输入缓冲，而那块缓冲里躺着一个请求，这个请求又恰恰在等这条进不来的回复。
+          再加上协议自身的依赖——读请求要等数据回来、写请求要等确认回来——就构成一个路由再怎么小心也消不掉的环。
+        </p>
+        <p>
+          解法是结构性的，不是加缓冲：把请求与回复放进不同的虚拟网络，让“回复 → 请求”这条边直接消失。
+          第 7 章会把它一般化：每一类消息各给一条虚拟网络。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 2.2', 'Figure 2.2')}
+      caption={t(
+        '切换 VN 划分方式，看类别依赖图什么时候出现环。青色是协议依赖（请求等回复），虚线赭色是缓冲依赖（回复等缓冲空位）；两者同时存在就成环。',
+        'Switch the VN layout and watch the class graph. Teal edges are protocol dependencies (request waits for reply); dashed ochre edges are buffer dependencies (reply waits for space). When both exist, the cycle closes.'
+      )}
+    >
+      <ProtocolDeadlockLab />
     </Figure>
 
     <div class="prose">
@@ -135,7 +174,7 @@
     </div>
 
     <Figure
-      no={t('图 2.2', 'Figure 2.2')}
+      no={t('图 2.3', 'Figure 2.3')}
       caption={t(
         '从协议到网络：上层决定消息，接口固定格式，网络只负责按时送到。虚拟网络把不同类别的消息分开排队。',
         'From protocol to network: the upper layer decides the messages, the interface fixes the format, the network only has to deliver them. Virtual networks keep the classes in separate queues.'

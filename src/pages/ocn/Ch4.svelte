@@ -48,6 +48,13 @@
           non-minimal adaptive may detour around congestion. Adaptivity is what turns the topology’s path diversity into
           throughput — and what makes deadlock analysis harder.
         </p>
+        <p>
+          Non-minimal adaptive deserves a sentence of its own: it treats “shortest” as optional. The usual scheme (UGAL)
+          prices two candidates at once — the minimal path and a detour via a far node — and takes whichever looks
+          emptier. Under light load the minimal path always looks cheaper, so it degenerates into deterministic routing;
+          only a real hotspot makes the detour win. That property matters: average hop count is not dragged down by the
+          non-minimal option.
+        </p>
       {:else}
         <p>
           <b>确定性</b>路由只看源和目的：同一对节点永远走同一条路。维序（XY）是标准例子，而且它是最小的——
@@ -60,6 +67,12 @@
         <p>
           <b>自适应</b>路由会看网络状态再决定。最小自适应只在最短路里挑；非最小自适应可以绕开拥塞。
           自适应正是把拓扑的路径多样性变成吞吐的东西——也是让死锁分析变难的东西。
+        </p>
+        <p>
+          非最小自适应值得单独说一句：它把“最短”也当成可选项。典型做法（UGAL）同时估两条候选路的代价——
+          一条是最短路，一条是先绕到远处再回来——谁的链路占用更低就走谁。低负载时最短路的估计代价总是更低，
+          于是行为退化成确定性路由；只有在热点出现之后，绕行才会被选中。这条“低负载时不像自适应”的性质很重要：
+          它意味着平均跳数不会被非最小路由拖累。
         </p>
       {/if}
 
@@ -300,6 +313,13 @@
         {t(
           `多播还有一种极端做法：Hamiltonian 路径。一个包按固定顺序走遍所有节点，在每个节点丢弃属于自己的那一份。4×4 mesh 上这条路径有 ${sweep} 跳——比树更死板，但路由逻辑近乎没有。`,
           `One extreme form of multicast is a Hamiltonian walk: a single packet visits nodes in a fixed order, dropping a copy at each. On a 4×4 mesh that walk is ${sweep} hops — more rigid than a tree, but with almost no routing logic at all.`
+        )}
+      </p>
+      <h4>{t('四种实现，四种代价', 'Four implementations, four costs')}</h4>
+      <p>
+        {t(
+          '同一个路由算法可以落成很不一样的东西。源路由：包头里带一串转向，每个路由器只读下一位——逻辑几乎为零，代价是包头变宽（转向数 × 每转向 2 bit），而且包越远头越长。节点表路由：每个路由器存一张“去往目的 X 用输出 Y”的表——头很短，代价是表面积随节点数线性长，还要软件配置。组合逻辑：把不规则图的关键路径固化成门电路——延迟最低，但改一次图就要重做一次综合。自适应逻辑：在组合逻辑之外再看几路队列占用——最灵活，代价是比较器与仲裁的延迟。',
+          'One routing function can be built four very different ways. Source routing puts a turn list in the header and each router reads one entry — almost no logic, at the price of a wider header that grows with distance. Node-table routing keeps a “destination X → output Y” table per router — short headers, but table area grows with the node count and it must be programmed. Combinational logic bakes the irregular graph’s paths into gates — lowest latency, and every graph change means resynthesis. Adaptive logic adds queue-occupancy comparisons on top — the most flexible, at the price of comparator and arbitration delay.'
         )}
       </p>
     </div>

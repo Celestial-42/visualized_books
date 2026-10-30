@@ -118,3 +118,80 @@ export const PROTOCOLS: { id: Protocol; label: string; labelEn: string }[] = [
   { id: 'mesi', label: 'MESI', labelEn: 'MESI' },
   { id: 'moesi', label: 'MOESI', labelEn: 'MOESI' }
 ];
+
+/**
+ * Protocol-level deadlock: the network's message classes plus the protocol's own
+ * wait-for relations. A reply needs a free input buffer; that buffer may be held
+ * by a request that is itself waiting for its reply. If the two classes share a
+ * virtual network, both directions exist and the protocol closes a cycle.
+ */
+export type MsgClass = 'req' | 'fwd' | 'inv' | 'ack' | 'data';
+
+export type ClassEdge = {
+  from: MsgClass;
+  to: MsgClass;
+  kind: 'protocol' | 'buffer';
+  note: string;
+  noteEn: string;
+};
+
+export const CLASSES: MsgClass[] = ['req', 'fwd', 'inv', 'ack', 'data'];
+
+const PROTOCOL_EDGES: ClassEdge[] = [
+  { from: 'req', to: 'data', kind: 'protocol', note: '读请求要等数据回来', noteEn: 'a read request waits for its data' },
+  { from: 'req', to: 'ack', kind: 'protocol', note: '写请求要等失效确认', noteEn: 'a write request waits for acks' },
+  { from: 'fwd', to: 'data', kind: 'protocol', note: '转发要等持有者回数据', noteEn: 'a forward waits for the owner’s data' },
+  { from: 'inv', to: 'ack', kind: 'protocol', note: '失效要等确认', noteEn: 'an invalidation waits for its ack' }
+];
+
+export type ClassGraph = {
+  edges: ClassEdge[];
+  cycle: MsgClass[] | null;
+};
+
+export const classCycle = (vnOf: Record<MsgClass, number>): ClassGraph => {
+  const edges: ClassEdge[] = [...PROTOCOL_EDGES];
+  const replies: MsgClass[] = ['data', 'ack'];
+  const requests: MsgClass[] = ['req', 'fwd', 'inv'];
+
+  for (const reply of replies) {
+    for (const request of requests) {
+      if (vnOf[reply] !== vnOf[request]) continue;
+      edges.push({
+        from: reply,
+        to: request,
+        kind: 'buffer',
+        note: `${reply} 和 ${request} 共用 VN${vnOf[reply]}：回复要进缓冲，而缓冲可能被请求占着`,
+        noteEn: `${reply} and ${request} share VN${vnOf[reply]}: the reply needs a buffer the request may hold`
+      });
+    }
+  }
+
+  const next = new Map<MsgClass, MsgClass[]>(CLASSES.map((c) => [c, []]));
+  for (const e of edges) next.get(e.from)?.push(e.to);
+
+  const state = new Map<MsgClass, number>(CLASSES.map((c) => [c, 0]));
+  const stack: MsgClass[] = [];
+
+  const visit = (u: MsgClass): MsgClass[] | null => {
+    state.set(u, 1);
+    stack.push(u);
+    for (const v of next.get(u) ?? []) {
+      if (state.get(v) === 1) return stack.slice(stack.indexOf(v));
+      if (state.get(v) === 0) {
+        const found = visit(v);
+        if (found) return found;
+      }
+    }
+    stack.pop();
+    state.set(u, 2);
+    return null;
+  };
+
+  for (const c of CLASSES) {
+    if (state.get(c) !== 0) continue;
+    const found = visit(c);
+    if (found) return { edges, cycle: found };
+  }
+  return { edges, cycle: null };
+};

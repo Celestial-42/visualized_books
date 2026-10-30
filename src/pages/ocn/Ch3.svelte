@@ -252,6 +252,20 @@
           'Topology synthesis asks the reverse question: given a communication graph and an area budget, generate a network. Tools use heuristics — cluster, join clusters into a regular spine, add shortcuts to cut the diameter. This site does not synthesise for you, but every candidate is judged by the same measurements: diameter, average hops, bisection, diversity — rebuild the graph and recompute.'
         )}
       </p>
+      <h4>{t('拆分与合并', 'Splitting and merging')}</h4>
+      <p>
+        {t(
+          '真实流量从来不是均匀的：某个角落的加速器和它旁边的一块 SRAM 之间可能占掉三成带宽。合成器对这类热点的两个基本动作是“拆分”和“合并”。把热点上的一个路由器拆成两个、各带一半端口，等于给这段链路加倍带宽，代价是多一个路由器和一圈额外的线；把流量很小的一串节点合并进一个路由器，等于砍掉若干跳与格点面积，代价是那一带的可达性变差。两个动作都会改变图——所以改完必须重新算直径、平均跳数、对剖和多样性，而不是沿用旧结论。',
+          'Real traffic is never uniform: an accelerator in one corner and the SRAM beside it may own thirty percent of the bandwidth. Synthesis has two basic moves for such hotspots. Splitting a hot router into two, each with half the ports, doubles that segment’s bandwidth for the price of one more router and its wires. Merging a chain of low-traffic nodes into one router removes hops and tile area, at the cost of reachability in that region. Both moves change the graph — so every measurement has to be recomputed, not carried over.'
+        )}
+      </p>
+      <h4>{t('合成算法长什么样', 'What a synthesis pass looks like')}</h4>
+      <p>
+        {t(
+          '书里给的例子很朴素：从通信矩阵出发，先按流量把节点聚成簇（让簇内流量远大于簇间），再把簇当成超节点连成一张规则骨架（mesh 或 ring），最后挑几条最长的跨簇路径加捷径。每一步都用同一套度量打分，选改进最大的那个候选。它不保证最优——拓扑合成本身是 NP 难的——但它保证“每一步都能被量出来”，这比凭直觉画图可靠得多。',
+          'The book’s example is plain: start from the communication matrix, cluster nodes so that intra-cluster traffic dwarfs inter-cluster traffic, treat clusters as supernodes and join them with a regular spine (mesh or ring), then add shortcuts along the longest cross-cluster paths. Every step is scored with the same metrics and the best candidate wins. It is not optimal — synthesis is NP-hard — but every step is measurable, which beats drawing by intuition.'
+        )}
+      </p>
     </div>
 
     <div class="prose">

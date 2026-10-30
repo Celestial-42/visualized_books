@@ -79,7 +79,89 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">1.2</span>{t('四个可独立设计的问题', 'Four questions you can answer separately')}</h3>
+      <h3><span class="h-no">1.2</span>{t('片上网络不是片外网络的小号', 'An on-chip network is not a small off-chip network')}</h3>
+      {#if en}
+        <p>
+          The same word “network” hides two very different budgets. Off-chip links are serial, few, and expensive per
+          bit: they pay for pads, packages, connectors and error handling, and each bit costs an order of magnitude more
+          energy than an on-chip wire. On-chip links are parallel, plentiful, short, and free of hot-plug concerns — but
+          the wires are fixed at design time, there are no retries, and area and leakage are somebody’s budget.
+        </p>
+      {:else}
+        <p>
+          同一个“网络”背后是两种完全不同的预算。片外链路是串行、条数少、每 bit 很贵：要付焊盘、封装、连接器与差错处理的代价，
+          每 bit 的能量比片上一根短线高一个数量级。片上链路是并行、条数多、短、且不用考虑热插拔——
+          但线在设计时就固定了，没有重传，面积与漏电都是别人要付的账。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 1.2', 'Figure 1.2')}
+      caption={t(
+        '量级对比（能量与延迟是数量级估计，随工艺与距离变化）。真正的差别在最后一列：片外可以重传和协商，片上只能靠设计保证。',
+        'Order-of-magnitude comparison (energy and latency vary with process and distance). The real difference is the last column: off-chip can retry and negotiate; on-chip has to be right by design.'
+      )}
+    >
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{t('维度', 'Aspect')}</th>
+              <th>{t('片上链路', 'On-chip link')}</th>
+              <th>{t('片外链路', 'Off-chip link')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{t('每 bit 能量', 'Energy per bit')}</td>
+              <td>{t('约 0.1–0.5 pJ', '≈ 0.1–0.5 pJ')}</td>
+              <td>{t('约 5–20 pJ（含 SerDes）', '≈ 5–20 pJ incl. SerDes')}</td>
+            </tr>
+            <tr>
+              <td>{t('单跳延迟', 'Per-hop latency')}</td>
+              <td>{t('约 1 拍（几百 ps）', '≈ one cycle (hundreds of ps)')}</td>
+              <td>{t('数十 ns（含编解码与同步）', 'tens of ns with coding and sync')}</td>
+            </tr>
+            <tr>
+              <td>{t('带宽来源', 'Where bandwidth comes from')}</td>
+              <td>{t('线很多，可以并行', 'many wires, run in parallel')}</td>
+              <td>{t('引脚数与速率', 'pin count and line rate')}</td>
+            </tr>
+            <tr>
+              <td>{t('出错怎么办', 'What happens on error')}</td>
+              <td>{t('不重传，靠设计与时序裕量', 'no retry; margin and design')}</td>
+              <td>{t('CRC + 重传 + 链路训练', 'CRC, retry, link training')}</td>
+            </tr>
+            <tr>
+              <td>{t('能不能改', 'Can it change later')}</td>
+              <td>{t('不能，布线在流片前定死', 'no — wires are fixed before tape-out')}</td>
+              <td>{t('可以换线、换速率', 'yes — cables, rates, retraining')}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Figure>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          That last row is why the two fields feel different. An off-chip protocol is allowed to be defensive because it
+          can always ask again. An on-chip network has no such escape: a deadlock or a routing bug is not a dropped
+          packet, it is a chip that hangs. This is also why the book spends two chapters on deadlock and buffer sizing —
+          those are the places where “be right by design” actually costs area.
+        </p>
+      {:else}
+        <p>
+          最后一行正是两个领域气质不同的原因。片外协议可以写得很防守，因为总有机会“再问一次”。
+          片上网络没有这条退路：一次死锁或一个路由 bug 不是丢一个包，而是一颗挂住的芯片。
+          这也是这本书要花两章讲死锁与缓冲尺寸的原因——那正是“必须设计正确”真正花掉面积的地方。
+        </p>
+      {/if}
+    </div>
+
+    <div class="prose">
+      <h3><span class="h-no">1.3</span>{t('四个可独立设计的问题', 'Four questions you can answer separately')}</h3>
       {#if en}
         <p>
           An on-chip network is usually described as four layers, and the layers are nearly independent. That
@@ -95,7 +177,7 @@
     </div>
 
     <Figure
-      no={t('图 1.2', 'Figure 1.2')}
+      no={t('图 1.3', 'Figure 1.3')}
       caption={t(
         '四层各回答一个问题。本章之后，第 3–6 章正好按这个顺序展开。',
         'Each layer answers one question. After this chapter, Chapters 3–6 follow exactly this order.'
@@ -160,7 +242,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">1.3</span>{t('这本书怎么读', 'How this book is organised')}</h3>
+      <h3><span class="h-no">1.4</span>{t('这本书怎么读', 'How this book is organised')}</h3>
       <ul>
         {#if en}
           <li><b>Chapter 2</b> connects the network to the system: coherence and message passing decide which packets exist.</li>
@@ -177,7 +259,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">1.4</span>{t('自测', 'Check yourself')}</h3>
+      <h3><span class="h-no">1.5</span>{t('自测', 'Check yourself')}</h3>
       <Quiz
         questions={[
           {
@@ -233,6 +315,14 @@
 </div>
 
 <style>
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .table-wrap .table {
+    min-width: 460px;
+  }
+
   .layers {
     display: grid;
     gap: 8px;
