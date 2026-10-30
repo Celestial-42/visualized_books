@@ -22,7 +22,7 @@ export const OCN_CHAPTERS: Chapter[] = [
     pages: '9–25',
     status: 'ready',
     part: 'ground',
-    blurb: 'cache 一致性与消息传递决定了网络上到底跑哪几种报文。协议的一个“读缺失”，在网络里是一小串请求、转发与响应。',
+    blurb: 'cache 一致性与消息传递决定了网络上到底跑哪几种报文。协议的一个“读 Miss”，在网络里是一小串请求、转发与响应。',
     blurbEn: 'Coherence and message passing decide which messages the network carries. One protocol read miss is a small train of request, forward and response packets.',
   },
   {

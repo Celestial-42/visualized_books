@@ -37,11 +37,11 @@
         </p>
       {:else}
         <p>
-          在共享内存多处理器里，每一次 cache 缺失都会变成一次网络事务：请求送到 home 节点，有时还要转发给当前持有者，
+          在共享内存多处理器里，每一次 cache Miss 都会变成一次网络事务：请求送到 home 节点，有时还要转发给当前持有者，
           然后是数据与确认。协议决定了每种消息有几个——也就决定了网络必须擅长什么。
         </p>
         <p>
-          这些差别不是装饰。MSI 在每次写缺失时都要失效；MESI 加了 Exclusive 状态，让私有行可以静默写入；
+          这些差别不是装饰。MSI 在每次写 Miss 时都要失效；MESI 加了 Exclusive 状态，让私有行可以静默写入；
           MOESI 允许脏持有者直接供数据，省掉一次内存往返。每一处改动都会从网络上拿掉一些消息，
           这也是为什么协议和 NoC 要一起设计。
         </p>
@@ -51,7 +51,7 @@
     <Figure
       no={t('图 2.1', 'Figure 2.1')}
       caption={t(
-        '一笔读缺失在网络上的样子。切协议、拖动持有者数量，消息条数与 flit 总量都由协议规则算出，不是表格里抄的。',
+        '一笔读 Miss 在网络上的样子。切协议、拖动持有者数量，消息条数与 flit 总量都由协议规则算出，不是表格里抄的。',
         'One read miss on the wire. Switch protocols and drag the sharer count: message counts and flit totals are derived from the protocol rules, not looked up.'
       )}
     >
@@ -75,11 +75,11 @@
       {:else}
         <p>
           每一行都有一个 home——内存的一个切片，或一个目录项——它负责串行化冲突请求，并记录谁持有这一行。
-          home 节点同时也是一个网络端点，有自己的排队：它看到的是自己地址范围内所有缺失的<em>总和</em>，
+          home 节点同时也是一个网络端点，有自己的排队：它看到的是自己地址范围内所有 Miss 的<em>总和</em>，
           所以它最容易成为全片的热点。
         </p>
         <p>
-          MSHR（未完成缺失记录）让 home 节点能在不阻塞的情况下挂起很多缺失：每一行一个表项，同一行的请求可以合并，
+          MSHR（miss status holding register，未完成 Miss 记录）让 home 节点能在不阻塞的情况下挂起很多 Miss：每一行一个表项，同一行的请求可以合并，
           表项满了就变成反压。从网络的角度看，MSHR 数量是一个调节流量的旋钮。
         </p>
       {/if}
@@ -185,7 +185,7 @@
           {
             q: t('MESI 相比 MSI，少掉的是哪类流量？', 'Compared with MSI, what traffic does MESI remove?'),
             options: [
-              t('读缺失的数据返回', 'Data returns on read misses'),
+              t('读 Miss 的数据返回', 'Data returns on read misses'),
               t('独占状态下的静默升级与部分失效', 'Silent upgrades and some invalidations in the Exclusive state'),
               t('写回', 'Writebacks')
             ],
@@ -196,11 +196,11 @@
             q: t('为什么 home 节点最容易成为热点？', 'Why is the home node the most likely hotspot?'),
             options: [
               t('因为它时钟最快', 'Because its clock is fastest'),
-              t('因为它是一个地址区间的所有缺失的汇合点', 'Because every miss in its address range converges on it'),
+              t('因为它是一个地址区间的所有 Miss 的汇合点', 'Because every miss in its address range converges on it'),
               t('因为它的缓冲最小', 'Because its buffers are smallest')
             ],
             answer: 1,
-            why: t('地址交织决定了流量分布；home 的带宽必须覆盖它那一片地址的全部未命中。', 'Address interleaving sets the distribution; a home’s bandwidth must absorb every miss for its slice.')
+            why: t('地址交织决定了流量分布；home 的带宽必须覆盖它那一片地址的全部 Miss。', 'Address interleaving sets the distribution; a home’s bandwidth must absorb every miss for its slice.')
           },
           {
             q: t('为什么不同类别的消息要分虚拟网络？', 'Why do message classes need separate virtual networks?'),

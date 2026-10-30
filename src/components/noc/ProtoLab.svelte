@@ -14,8 +14,8 @@
   const tx = $derived(transaction(protocol, op, sharers, dirty));
 
   const OPS: { id: Op; label: string; labelEn: string }[] = [
-    { id: 'read', label: '读缺失', labelEn: 'read miss' },
-    { id: 'write', label: '写缺失', labelEn: 'write miss' },
+    { id: 'read', label: '读 Miss', labelEn: 'read miss' },
+    { id: 'write', label: '写 Miss', labelEn: 'write miss' },
     { id: 'upgrade', label: '升级 S→M', labelEn: 'upgrade S→M' },
     { id: 'writeback', label: '脏块替换', labelEn: 'dirty replace' }
   ];

@@ -220,7 +220,7 @@
         <button class="next-card" onclick={() => open('ch2')}>
           <span class="next-no display">02</span>
           <strong>{t('与系统架构的接口', 'Interface with system architecture')}</strong>
-          <span>{t('一致性协议一次读缺失，在网络上是哪几个包。', 'What one coherence read miss looks like on the wire.')}</span>
+          <span>{t('一致性协议一次读 Miss，在网络上是哪几个包。', 'What one coherence read miss looks like on the wire.')}</span>
         </button>
         <button class="next-card" onclick={() => open('ch3')}>
           <span class="next-no display">03</span>
