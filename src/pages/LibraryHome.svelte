@@ -73,7 +73,7 @@
                 <text x="365" y="46" class="art-note" text-anchor="middle">{t('单地址副本', 'one address')}</text>
               </g>
             </svg>
-          {:else}
+          {:else if book.id === 'on-chip-networks'}
             <svg class="art" viewBox="0 0 420 96" fill="none" aria-hidden="true">
               <g class="mesh">
                 {#each [0, 1, 2, 3] as r}
@@ -92,6 +92,23 @@
                 <text x="252" y="34" class="art-note">{t('4×4 mesh · 16 个路由器', '4×4 mesh · 16 routers')}</text>
                 <text x="252" y="50" class="art-note">{t('链路 24 条 · 对剖 4 条', '24 links · bisection 4')}</text>
                 <text x="252" y="66" class="art-note">{t('平均 2.67 跳', '2.67 hops on average')}</text>
+              </g>
+            </svg>
+          {:else}
+            <svg class="art" viewBox="0 0 420 96" fill="none" aria-hidden="true">
+              <g class="turn">
+                {#each [0, 1, 2] as r}
+                  {#each [0, 1, 2] as c}
+                    <rect x={28 + c * 62} y={10 + r * 26} width="14" height="14" rx="3.4" class="node" />
+                  {/each}
+                {/each}
+                <path d="M35 17H97M97 17H159M35 43H97M97 43H159M35 69H97M97 69H159" class="link" />
+                <path d="M42 24V36M104 24V36M166 24V36M42 50V62M104 50V62M166 50V62" class="link" />
+                <path d="M35 17V43H97V69H159" class="route" />
+                <path d="M159 69H221" class="route bad" />
+                <text x="266" y="30" class="art-note">{t('通道相关图', 'channel dependency graph')}</text>
+                <text x="266" y="46" class="art-note">{t('有环 = 死锁', 'cycle = deadlock')}</text>
+                <text x="266" y="62" class="art-note">{t('禁两个转向即可解开', 'forbid two turns and it opens')}</text>
               </g>
             </svg>
           {/if}
@@ -375,6 +392,27 @@
 
   .mesh .route-dot.dest {
     fill: var(--ember);
+  }
+
+  .turn .node {
+    fill: var(--card-2);
+    stroke: var(--line);
+  }
+
+  .turn .link {
+    stroke: var(--line);
+    stroke-width: 0.8;
+  }
+
+  .turn .route {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.2;
+  }
+
+  .turn .route.bad {
+    stroke: var(--ember);
+    stroke-dasharray: 3 3;
   }
 
   .book-foot {

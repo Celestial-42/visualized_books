@@ -4,6 +4,7 @@
   import LibraryHome from './pages/LibraryHome.svelte';
   import Home from './pages/Home.svelte';
   import OcnHome from './pages/ocn/Home.svelte';
+  import IcnHome from './pages/icn/Home.svelte';
   import Ch1 from './pages/Ch1.svelte';
   import Ch2 from './pages/Ch2.svelte';
   import Ch3 from './pages/Ch3.svelte';
@@ -23,6 +24,8 @@
   import Ocn6 from './pages/ocn/Ch6.svelte';
   import Ocn7 from './pages/ocn/Ch7.svelte';
   import Ocn8 from './pages/ocn/Ch8.svelte';
+  import Icn3 from './pages/icn/Ch3.svelte';
+  import Icn4 from './pages/icn/Ch4.svelte';
   import { parseRoute } from './lib/books';
   import { router } from './lib/router.svelte';
   import { markVisited } from './lib/progress.svelte';
@@ -49,7 +52,9 @@
     'on-chip-networks/ch5': Ocn5,
     'on-chip-networks/ch6': Ocn6,
     'on-chip-networks/ch7': Ocn7,
-    'on-chip-networks/ch8': Ocn8
+    'on-chip-networks/ch8': Ocn8,
+    'interconnection-networks/ch3': Icn3,
+    'interconnection-networks/ch4': Icn4
   };
 
   const page = $derived(
@@ -71,8 +76,10 @@
     {:else if route.kind === 'book'}
       {#if route.book.id === 'memory-primer'}
         <Home />
-      {:else}
+      {:else if route.book.id === 'on-chip-networks'}
         <OcnHome />
+      {:else}
+        <IcnHome />
       {/if}
     {:else if route.kind === 'chapter' && page}
       {@const Page = page}

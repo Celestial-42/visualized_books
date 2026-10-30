@@ -1,7 +1,8 @@
 import { CHAPTERS as MP_CHAPTERS, PARTS as MP_PARTS, type Chapter } from './content';
 import { OCN_CHAPTERS, OCN_PARTS } from './noc/content';
+import { ICN_CHAPTERS, ICN_PARTS } from './icn/content';
 
-export type BookId = 'memory-primer' | 'on-chip-networks';
+export type BookId = 'memory-primer' | 'on-chip-networks' | 'interconnection-networks';
 
 export type Part = { id: string; label: string; en: string };
 
@@ -48,6 +49,20 @@ export const BOOKS: Book[] = [
     pages: '142',
     parts: OCN_PARTS,
     chapters: OCN_CHAPTERS
+  },
+  {
+    id: 'interconnection-networks',
+    no: '03',
+    title: '并行互连网络',
+    titleEn: 'Interconnection Networks',
+    spine: 'Deadlock × Routing',
+    short: '一种工程方法',
+    shortEn: 'An Engineering Approach',
+    authors: 'Duato · Yalamanchili · Ni',
+    edition: '中文版 · 2004',
+    pages: '400',
+    parts: ICN_PARTS,
+    chapters: ICN_CHAPTERS
   }
 ];
 
