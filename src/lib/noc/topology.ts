@@ -4,7 +4,7 @@
  * on the graph; nothing is copied from a table.
  */
 
-export type TopoKind = 'ring' | 'mesh' | 'torus' | 'crossbar' | 'fattree';
+export type TopoKind = 'ring' | 'mesh' | 'torus' | 'crossbar' | 'fattree' | 'butterfly';
 
 export type Graph = {
   kind: TopoKind;
@@ -56,6 +56,48 @@ const finish = (
     links.push([Math.min(u, v), Math.max(u, v)]);
   }
   return { kind, w, h, n, adj: adj.map((l) => l.sort((a, b) => a - b)), links, pos, terminals, cut };
+};
+
+/**
+ * 2-ary butterfly (an omega-style multistage network) on `terminals` endpoints.
+ * log₂N stages of 2×2 switches; stage s shuffles a switch to switches 2j and 2j+1.
+ */
+const butterfly = (terminals: number): Graph => {
+  const stages = Math.round(Math.log2(terminals));
+  const perStage = terminals / 2;
+  const sw = (stage: number, j: number) => terminals + stage * perStage + j;
+  const n = terminals + stages * perStage;
+
+  const edges: [number, number][] = [];
+  const pos: { x: number; y: number }[] = [];
+
+  for (let t = 0; t < terminals; t++) edges.push([t, sw(0, Math.floor(t / 2))]);
+  for (let s = 0; s + 1 < stages; s++) {
+    const bit = 1 << s;
+    for (let j = 0; j < perStage; j++) {
+      // butterfly wiring: stage s links switch j with j and with j XOR 2^s
+      edges.push([sw(s, j), sw(s + 1, j)]);
+      edges.push([sw(s, j), sw(s + 1, j ^ bit)]);
+    }
+  }
+  for (let t = 0; t < terminals; t++) edges.push([t, sw(stages - 1, Math.floor(t / 2))]);
+
+  const xOf = (stage: number) => 10 + (stage * 80) / Math.max(1, stages);
+  for (let i = 0; i < n; i++) {
+    if (i < terminals) {
+      // terminals sit just inside the first and last stages so the columns stay readable
+      const left = i < terminals / 2;
+      pos.push({ x: left ? 3 : 97, y: 8 + ((i % (terminals / 2)) * 84) / (terminals / 2 - 1) });
+    } else {
+      const k = i - terminals;
+      const stage = Math.floor(k / perStage);
+      const j = k % perStage;
+      pos.push({ x: xOf(stage), y: 8 + (j * 84) / (perStage - 1) });
+    }
+  }
+
+  // cutting between the two middle stages severs every switch-to-switch link
+  return finish('butterfly', terminals, 1, n, edges, pos, [...Array(terminals).keys()], perStage * 2);
 };
 
 /**
@@ -119,6 +161,7 @@ const fatTree = (k: number): Graph => {
 
 export const buildTopology = (kind: TopoKind, w: number, h: number): Graph => {
   if (kind === 'fattree') return fatTree(w);
+  if (kind === 'butterfly') return butterfly(w);
 
   if (kind === 'ring') {
     const n = w * h;

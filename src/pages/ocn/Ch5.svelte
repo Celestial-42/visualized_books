@@ -4,6 +4,7 @@
   import Quiz from '../../components/Quiz.svelte';
   import FlowLab from '../../components/noc/FlowLab.svelte';
   import BubbleLab from '../../components/noc/BubbleLab.svelte';
+  import EscapeVcLab from '../../components/noc/EscapeVcLab.svelte';
   import FlowTiming from '../../components/noc/FlowTiming.svelte';
   import { circuitCost, bufferFootprint, transferLatency } from '../../lib/noc/flow';
   import { creditThroughput } from '../../lib/noc/perf';
@@ -351,8 +352,51 @@
       {/if}
     </div>
 
+    <div class="prose">
+      <h3><span class="h-no">5.6.1</span>{t('逃逸 VC：Duato 的条件', 'Escape VCs: Duato’s condition')}</h3>
+      {#if en}
+        <p>
+          Duato’s result is more permissive than “make the dependency graph acyclic”. It is enough that <em>some</em>
+          connected sub-network is routed by an acyclic function and that every channel of the rest can reach it: a
+          packet that ends up on the escape lane always drains, so no hold-and-wait cycle can persist. The escape lane
+          is usually dimension order; everything else may use any turns at all.
+        </p>
+        <p>
+          The lab checks the three conditions separately, because each one fails for a different reason. A network with
+          no escape at all cycles immediately. An escape that is acyclic and reachable but not connected (only eastward
+          channels, say) still fails: packets can enter it but cannot get anywhere from it. And a second VC with no
+          acyclic routing function is not an escape at all.
+        </p>
+      {:else}
+        <p>
+          Duato 的结论比“把依赖图做成无环”宽松得多：只要有<em>某个</em>连通子网按可证无环的函数路由，
+          并且其余部分每条信道都能到达它，就够了——落到逃逸通道上的包一定能排空，于是等待环无法长期存在。
+          逃逸通道通常就是维序，其余部分可以允许任意转向。
+        </p>
+        <p>
+          下面把三个条件拆开检查，因为它们失败的原因各不相同。完全不给逃逸，依赖图立刻成环；
+          逃逸无环、也都能摸到，但不连通（比如只留向东的信道），仍然不合格——包进得去、却出不来；
+          而“多开一条 VC、却不给它一个无环路由函数”，根本不是逃逸。
+        </p>
+      {/if}
+    </div>
+
     <Figure
       no={t('图 5.5', 'Figure 5.5')}
+      caption={t(
+        '四个选项分别破坏一个条件：没有逃逸（成环）、正确逃逸（三个条件全过）、只有向东的逃逸（不连通）、假逃逸（逃逸自身成环）。全部由 4×4 mesh 上的信道依赖图现算。',
+        'Four options, each breaking one condition: no escape (cycles), a correct escape (all three checks pass), eastward-only escape (not connected), and a fake escape (cycles by itself). All computed from the channel graph of a 4×4 mesh.'
+      )}
+    >
+      <EscapeVcLab />
+    </Figure>
+
+    <div class="prose">
+      <h3><span class="h-no">5.6.2</span>{t('气泡流控：不用第二套 VC', 'Bubble flow control: no second lane')}</h3>
+    </div>
+
+    <Figure
+      no={t('图 5.6', 'Figure 5.6')}
       caption={t(
         '气泡流控：包级 VCT，注入时要求目标缓冲还留两个空包位。单 VC 普通注入在 2 包/缓冲时立刻死锁；同一负载下打开气泡规则，环里始终留一个空位，流量持续。',
         'Bubble flow control: packet-level VCT, and injection requires two free packet slots. Plain injection deadlocks immediately at two slots per buffer; the same load under the bubble rule always keeps one hole free.'
@@ -444,7 +488,7 @@
     </div>
 
     <Figure
-      no={t('图 5.6', 'Figure 5.6')}
+      no={t('图 5.7', 'Figure 5.7')}
       caption={t(
         '左边是 credit 的一次往返：数据往前走 8 拍，额度沿反方向回来，这一来一回就是 8 拍；右边是缓冲深度与可持续速率的关系，深度到 8 才吃满一条链路——这就是“缓冲按 BDP 配”的量化版本。',
         'Left: one credit round trip — data goes forward for eight cycles and the credit comes back the other way, so the loop is eight cycles. Right: sustained rate against buffer depth; depth eight is where the link finally saturates — the quantitative version of “size the buffer to the bandwidth-delay product”.'
@@ -508,7 +552,7 @@
     </div>
 
     <Figure
-      no={t('图 5.7', 'Figure 5.7')}
+      no={t('图 5.8', 'Figure 5.8')}
       caption={t(
         '四种常见配置的缓冲位数与反向线数（数据位宽按 64 bit 计）。深度翻倍时缓冲线性涨，credit 线只涨 1 位；换成 on/off 信号则与深度无关。',
         'Buffer bits and reverse wires for four common configurations at 64-bit links. Doubling depth doubles the buffer but adds one bit of credit; an on/off signal ignores depth altogether.'

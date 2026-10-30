@@ -3,11 +3,34 @@
   import Figure from '../../components/Figure.svelte';
   import Quiz from '../../components/Quiz.svelte';
   import PerfLab from '../../components/noc/PerfLab.svelte';
+  import { buildTopology, metrics } from '../../lib/noc/topology';
+  import { profile } from '../../lib/noc/perf';
   import { lang, t } from '../../lib/lang.svelte';
   import { navigate } from '../../lib/router.svelte';
 
   const en = $derived(lang.value === 'en');
   const open = (slug: string) => navigate(`/book/on-chip-networks/${slug}`);
+
+  const PER_HOP = 5;
+  const FLITS = 4;
+
+  const models = [
+    { id: 'mesh', label: 'mesh 4×4', kind: 'mesh', w: 4, h: 4 },
+    { id: 'torus', label: 'torus 4×4', kind: 'torus', w: 4, h: 4 },
+    { id: 'ring', label: 'ring 16', kind: 'ring', w: 16, h: 1 },
+    { id: 'crossbar', label: 'crossbar 16', kind: 'crossbar', w: 16, h: 1 }
+  ].map((m) => {
+    const g = buildTopology(m.kind as never, m.w, m.h);
+    const met = metrics(g);
+    const p = profile(m.kind as never, m.w, m.h, 'uniform', 'xy');
+    return {
+      ...m,
+      hops: met.avgHops,
+      zeroLoad: met.avgHops * PER_HOP + FLITS,
+      bisection: met.bisection,
+      saturation: p.saturation
+    };
+  });
 </script>
 
 <div class="page">
@@ -90,6 +113,73 @@
         <p>
           图里第三条线是书里的<b>理想互连</b>：带宽无限，所以无论负载多高延迟都不涨。它不是设计目标，而是一把尺子——
           平线与真实曲线之间的距离，就是拓扑、缓冲与流控正在付出的代价。好的设计会在接近饱和之前一直把这个差距压得很小。
+        </p>
+      {/if}
+    </div>
+
+    <div class="prose">
+      <h3><span class="h-no">7.1.1</span>{t('零负载延迟与饱和点可以手算', 'Zero-load latency and saturation, by hand')}</h3>
+      {#if en}
+        <p>
+          Both ends of the curve have closed forms. Zero-load latency is hops × cycles-per-hop plus one serialisation:
+          with a five-cycle router and a four-flit packet, a 4×4 mesh pays 2.67 × 5 + 4 ≈ 17 cycles. Saturation is set by
+          the busiest link, which the routing function decides — the table measures it on the graph.
+        </p>
+      {:else}
+        <p>
+          曲线的两端都有闭式解。零负载延迟 = 平均跳数 × 每跳拍数 + 一次序列化：五级流水、4 flit 的包，
+          4×4 mesh 就是 2.67 × 5 + 4 ≈ 17 拍。饱和点由最忙的那条链路决定，而哪条链路最忙取决于路由函数——
+          下表是在图上逐对路由量出来的。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 7.2', 'Figure 7.2')}
+      caption={t(
+        '四张拓扑的解析值与引擎实测值并排。零负载延迟只依赖平均跳数；饱和注入率只依赖最忙链路（一条链路每拍只送一个 flit、双向共享），所以两者由不同的量决定——“延迟低”和“吞吐高”经常不是同一个选择。torus 与 ring 按环绕最短路计。',
+        'Analytical and measured values side by side. Zero-load latency depends only on average hops; saturation only on the busiest link (one flit per cycle per link, shared across both directions), so different quantities decide them — which is why “low latency” and “high throughput” are often different choices. Torus and ring are routed along wrap-around shortest paths.'
+      )}
+    >
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{t('拓扑', 'Topology')}</th>
+              <th>{t('平均跳数', 'Avg hops')}</th>
+              <th>{t('零负载延迟', 'Zero-load latency')}</th>
+              <th>{t('对剖', 'Bisection')}</th>
+              <th>{t('饱和注入率', 'Saturation')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each models as m}
+              <tr>
+                <td class="mono">{m.label}</td>
+                <td class="num">{m.hops.toFixed(2)}</td>
+                <td class="num">{m.zeroLoad.toFixed(1)} {t('拍', 'cyc')}</td>
+                <td class="num">{m.bisection}</td>
+                <td class="num">{m.saturation.toFixed(3)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </Figure>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          The queueing half is one more line: for a Poisson arrival and a fixed service time, the mean wait is
+          ρ / (2(1−ρ)) service times. Multiply by the per-packet service time and add the zero-load latency and you have
+          the curve in Figure 7.1 — flat, then a knee, then a wall. Nothing in that formula knows about topology; the
+          topology enters only through the zero-load term and the ρ at which the busiest link saturates.
+        </p>
+      {:else}
+        <p>
+          排队那一半只多一行：泊松到达、固定服务时间时，平均等待是 ρ / (2(1−ρ)) 个服务时间。
+          乘上每包的服务时间、再加上零负载延迟，就是图 7.1 那条曲线——先平、再拐、最后竖起来。
+          公式本身完全不知道拓扑；拓扑只通过两个数进来：零负载项，以及“最忙链路在多高的 ρ 上饱和”。
         </p>
       {/if}
     </div>
@@ -270,6 +360,14 @@
 </div>
 
 <style>
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .table-wrap .table {
+    min-width: 480px;
+  }
+
   .models {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -59,7 +59,7 @@
     <Figure
       no={t('图 3.1', 'Figure 3.1')}
       caption={t(
-        '换拓扑、换规模，点两个节点看最短路径。下面的表格是另外四种连法在同一 16 节点下的实测值——全部由图上 BFS 算出。',
+        '换拓扑、换规模，点两个节点看最短路径。下面的表格是其他几种连法在同一 16 终端下的实测值——全部由图上 BFS 算出。',
         'Change topology and size, then pick two nodes to see a shortest path. The table measures the other three on the same 16 nodes — all from BFS on the graph.'
       )}
     >
@@ -171,6 +171,27 @@
           比如机架，而不是 20 平方毫米的 tile。
         </p>
       {/if}
+
+      <h4>{t('butterfly：用更多的线换更短的直径', 'Butterfly: shorter diameter, bought with links')}</h4>
+      <p>
+        {t(
+          '把 fat tree 的“级”摊平，得到的是 butterfly（多级互连网）：16 个终端接 4 级 2×2 开关，共 32 个开关、80 条链路。它的直径只有 5（mesh 是 6），平均跳数 4.53（fat tree 是 5.47），对剖 16。代价有两处：一是开关数 32 个、链路 80 条，都是 mesh 的三倍以上；二是路径多样性只有 2——每一对终端几乎只有一条通路，没有给自适应路由留任何空间。',
+          'Flatten the fat tree and you get a butterfly: 16 terminals into four stages of 2×2 switches, 32 switches and 80 links. Its diameter is 5 (a mesh needs 6) and average hops 4.53 (fat tree 5.47), with bisection 16. Two costs: 32 switches and 80 links, more than three times a mesh; and path diversity of only 2 — almost every pair has a single route, leaving adaptive routing nothing to choose.'
+        )}
+      </p>
+      <p>
+        {t(
+          '这条规律值得记：多级网络的直径按 log N 长，代价是每一级都要一组开关和线；而直接网络的直径按 √N 长，代价是每跳都要一个路由器。选择本质上是在“级数”和“跳数”之间挑一个更便宜的方向。',
+          'Worth remembering: a multistage network’s diameter grows as log N and pays with one switch stage and one link set per level; a direct network’s diameter grows as √N and pays with one router per hop. The choice is really about which of the two is cheaper for you.'
+        )}
+      </p>
+      <h4>{t('Clos 与 fat tree 的关系', 'Clos, and how it relates to the fat tree')}</h4>
+      <p>
+        {t(
+          '三级 Clos 是这类网络的一般形式：r 个输入开关、m 个中间开关、r 个输出开关，每个开关 n 个端口。当 m ≥ 2n−1 时它是严格无阻塞的（任意空闲输入到任意空闲输出都有路），代价是中间级要用 m 个开关。把 Clos 从两侧折起来、让终端同时接在输入输出上，就得到 fat tree——这也是书里把两类画在一起的缘故：fat tree 是折叠的 Clos，而“把链路加粗”只是实现无阻塞的另一种方式。',
+          'A three-stage Clos is the general form: r input switches, m middle switches, r output switches, n ports each. It is strictly non-blocking when m ≥ 2n−1 — any idle input can reach any idle output — at the price of m middle switches. Fold a Clos so each terminal sits on both the input and output side and you get a fat tree; that is why the book draws them together. A fat tree is a folded Clos, and thickening links is just another way to buy non-blocking behaviour.'
+        )}
+      </p>
     </div>
 
     <Figure

@@ -22,8 +22,10 @@
   } = $props();
 
   const isMesh = $derived(graph.kind === 'mesh' || graph.kind === 'torus');
-  const nodeSize = $derived(isMesh ? 5.4 : graph.kind === 'fattree' ? 3.6 : 4.6);
-  const drawn = $derived(graph.kind === 'fattree' ? [...Array(graph.n).keys()] : graph.terminals);
+  const nodeSize = $derived(isMesh ? 5.4 : graph.kind === 'fattree' || graph.kind === 'butterfly' ? 3.4 : 4.6);
+  const drawn = $derived(
+    graph.kind === 'fattree' || graph.kind === 'butterfly' ? [...Array(graph.n).keys()] : graph.terminals
+  );
   const isTerminal = (node: number) => graph.terminals.includes(node);
 </script>
 

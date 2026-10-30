@@ -124,7 +124,37 @@ export const valiantPath = (g: Graph, s: number, t: number): number[] => valiant
 
 export type RoutingId = 'xy' | 'west' | 'valiant' | 'yx';
 
+/** Wrap-aware minimal routing on a 2-D torus: each dimension takes its shorter way round. */
+const torusPath = (g: Graph, s: number, t: number): number[] => {
+  const out = [s];
+  let x = s % g.w;
+  let y = Math.floor(s / g.w);
+  const tx = t % g.w;
+  const ty = Math.floor(t / g.w);
+
+  const step = (delta: number, size: number) => {
+    const half = size / 2;
+    if (delta === 0) return 0;
+    if (delta > 0) return delta <= half ? 1 : -1;
+    return -delta < half ? -1 : 1;
+  };
+
+  while (x !== tx) {
+    x = (x + step(tx - x, g.w) + g.w) % g.w;
+    out.push(idAt(g, x, y));
+  }
+  while (y !== ty) {
+    y = (y + step(ty - y, g.h) + g.h) % g.h;
+    out.push(idAt(g, x, y));
+  }
+  return out;
+};
+
 export const routeBy = (g: Graph, s: number, t: number, algo: RoutingId): number[] => {
+  // a crossbar is one switch: every path is terminal → center → terminal
+  if (g.kind === 'crossbar') return [s, g.n - 1, t];
+  if ((g.kind === 'torus' || g.kind === 'ring') && (algo === 'xy' || algo === 'yx')) return torusPath(g, s, t);
+
   switch (algo) {
     case 'xy':
       return xyPath(g, s, t);
@@ -336,6 +366,175 @@ export const sourceRoute = (g: Graph, path: number[]): Dir[] => {
     if (d) dirs.push(d);
   }
   return dirs;
+};
+
+export type EscapeResult = {
+  escapeAcyclic: boolean;
+  escapeCycle: string[] | null;
+  escapeConnected: boolean;
+  reachable: number;
+  total: number;
+  unreachableSample: string[];
+  safe: boolean;
+};
+
+/**
+ * Duato's escape-VC condition, checked on the graph: one virtual network is
+ * routed by a provably acyclic function (usually dimension order) and every
+ * channel of the adaptive network must be able to reach a channel of it. A
+ * packet that lands on the escape lane always drains, so the cyclic adaptive
+ * network cannot close a permanent hold-and-wait.
+ */
+export const escapeAnalysis = (
+  g: Graph,
+  adaptiveTurns: Turn[],
+  escapeTurns: Turn[],
+  escapeFilter: (d: Dir) => boolean = () => true
+): EscapeResult => {
+  const base = buildCDG(g, ALL_TURNS);
+  type Node = { u: number; v: number; dir: Dir; vc: number };
+  const nodes: Node[] = [];
+  const index = new Map<string, number>();
+
+  base.channels.forEach((c, ci) => {
+    index.set(`${ci}@0`, nodes.length);
+    nodes.push({ u: c.u, v: c.v, dir: c.dir, vc: 0 });
+    if (escapeFilter(c.dir)) {
+      index.set(`${ci}@1`, nodes.length);
+      nodes.push({ u: c.u, v: c.v, dir: c.dir, vc: 1 });
+    }
+  });
+
+  const deps: number[][] = nodes.map(() => []);
+  base.channels.forEach((a, ci) => {
+    const from0 = index.get(`${ci}@0`);
+    const from1 = index.get(`${ci}@1`);
+    for (const w of g.adj[a.v]) {
+      const dir = dirOf(g, a.v, w);
+      if (!dir) continue;
+      const straight = dir === a.dir;
+      const turn = `${a.dir}${dir}` as Turn;
+      const nextCi = base.channels.findIndex((c) => c.u === a.v && c.v === w);
+      if (nextCi < 0) continue;
+      const to0 = index.get(`${nextCi}@0`);
+      const to1 = index.get(`${nextCi}@1`);
+
+      if (from0 !== undefined && to0 !== undefined && (straight || adaptiveTurns.includes(turn))) {
+        deps[from0].push(to0);
+      }
+      if (from0 !== undefined && to1 !== undefined && (straight || escapeTurns.includes(turn))) {
+        deps[from0].push(to1);
+      }
+      if (from1 !== undefined && to1 !== undefined && (straight || escapeTurns.includes(turn))) {
+        deps[from1].push(to1);
+      }
+    }
+  });
+
+  // the escape lane itself must be acyclic
+  const escapeNodes = nodes.map((n, i) => (n.vc === 1 ? i : -1)).filter((i) => i >= 0);
+  const escapeSet = new Set(escapeNodes);
+  const state = new Array<number>(nodes.length).fill(0);
+  const stack: number[] = [];
+  const label = (i: number) => `${nodes[i].u}→${nodes[i].v}@escape`;
+  let escapeCycle: string[] | null = null;
+
+  const visit = (u: number): string[] | null => {
+    state[u] = 1;
+    stack.push(u);
+    for (const v of deps[u]) {
+      if (!escapeSet.has(v)) continue;
+      if (state[v] === 1) return stack.slice(stack.indexOf(v)).map(label);
+      if (state[v] === 0) {
+        const found = visit(v);
+        if (found) return found;
+      }
+    }
+    stack.pop();
+    state[u] = 2;
+    return null;
+  };
+
+  for (const i of escapeNodes) {
+    if (state[i] !== 0) continue;
+    const found = visit(i);
+    if (found) {
+      escapeCycle = found;
+      break;
+    }
+  }
+
+  // every adaptive channel has to be able to reach the escape lane
+  const total = nodes.filter((n) => n.vc === 0).length;
+  let reachable = 0;
+  const unreachableSample: string[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].vc !== 0) continue;
+    const seen = new Array<boolean>(nodes.length).fill(false);
+    const queue = [i];
+    seen[i] = true;
+    let ok = false;
+    for (let head = 0; head < queue.length && !ok; head++) {
+      const u = queue[head];
+      if (nodes[u].vc === 1) {
+        ok = true;
+        break;
+      }
+      for (const v of deps[u]) {
+        if (seen[v]) continue;
+        seen[v] = true;
+        queue.push(v);
+      }
+    }
+    if (ok) reachable++;
+    else if (unreachableSample.length < 4) unreachableSample.push(`${nodes[i].u}→${nodes[i].v}`);
+  }
+
+  const escapeConnected = escapeConnects(g, escapeTurns, escapeFilter);
+
+  return {
+    escapeAcyclic: escapeCycle === null,
+    escapeCycle,
+    escapeConnected,
+    reachable,
+    total,
+    unreachableSample,
+    safe: escapeCycle === null && escapeConnected && reachable === total
+  };
+};
+
+/**
+ * “Connected escape subnetwork” means: using only escape-capable channels and
+ * escape-legal turns, every terminal can still be routed to. An acyclic escape
+ * function can never be strongly connected, so reachability of terminals (not of
+ * channels) is the right test.
+ */
+const escapeConnects = (g: Graph, escapeTurns: Turn[], escapeFilter: (d: Dir) => boolean): boolean => {
+  const dirs: Dir[] = ['E', 'W', 'N', 'S'];
+  const target = new Set(g.terminals);
+
+  for (const start of g.terminals) {
+    const seen = new Set<string>([`${start}:*`]);
+    const queue: [number, Dir | null][] = [[start, null]];
+    const reached = new Set<number>([start]);
+
+    for (let h = 0; h < queue.length; h++) {
+      const [u, last] = queue[h];
+      for (const v of g.adj[u]) {
+        const d = dirOf(g, u, v);
+        if (!d || !escapeFilter(d)) continue;
+        if (last && d !== last && !escapeTurns.includes(`${last}${d}` as Turn)) continue;
+        const key = `${v}:${d}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        queue.push([v, d]);
+        if (target.has(v)) reached.add(v);
+      }
+    }
+    if (reached.size !== target.size) return false;
+  }
+  if (dirs.length === 0) return false;
+  return true;
 };
 
 /** Path-based multicast: the union of the individual XY routes. */
