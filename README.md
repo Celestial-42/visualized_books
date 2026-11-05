@@ -11,6 +11,7 @@
 | 01 | 共享内存图谱 / Shared Memory Atlas | Sorin, Nagarajan, Hill, Wood · *A Primer on Memory Consistency and Cache Coherence*, 2nd ed. 2020 | 11 章 | 从一致性模型到 Snoop/MESI 目录协议 |
 | 02 | 片上网络 / On-Chip Networks | Enright Jerger, Krishna, Peh · *On-Chip Networks*, 2nd ed. 2017 | 8 章 | 拓扑、路由、死锁、流控、路由器、性能、协议、案例 |
 | 03 | 并行互连网络 / Interconnection Networks | Duato, Yalamanchili, Ni · *Interconnection Networks: An Engineering Approach*（中文版 2004） | 第 3、4 章 | 死锁/活锁/饿死 + 路由算法；其余章节在书目页标注为计划中 |
+| 04 | 典型逻辑电路 / Typical Logic Circuits | 本站原创讲义，不依据特定出版物 | 第 1 章 | FIFO 的同步实现（满空判定、读出时序、深度计算）；异步 FIFO 与跨时钟域在计划中 |
 
 ## 本地运行
 
@@ -42,14 +43,15 @@ src/
     content.ts          第 1 本书的章节元数据
     noc/                第 2 本书：章节元数据 + 拓扑/路由/流控/路由器/性能/协议引擎
     icn/                第 3 本书：章节元数据 + 转向分析、仲裁与活锁实验
+    logic/              第 4 本书：章节元数据 + FIFO 状态机、时序与深度引擎
   pages/
     LibraryHome.svelte  书库首页
     Ch*.svelte          第 1 本书各章
-    ocn/  icn/          第 2、3 本书的目录页与章节页
+    ocn/  icn/  logic/  第 2、3、4 本书的目录页与章节页
   components/
     Figure.svelte       图号 + 题注容器
     Quiz.svelte         章末自测
-    noc/  icn/          各类交互实验（拓扑、路由、转弯、流控、仲裁……）
+    noc/  icn/  logic/  各类交互实验（拓扑、路由、转弯、流控、仲裁、FIFO……）
 ```
 
 ## 写作与实现约定
@@ -80,6 +82,6 @@ src/
 
 ## 来源与声明
 
-内容基于上述公开出版书籍的章节结构与理论整理，正文、图与交互均为本项目原创实现；不收录原书扫描页或大段原文。第三本书为扫描版中文译作，仅取章节结构用于编排，正文按一手文献（Dally & Seitz 的通道相关图、Duato 的充分条件、Glass & Ni 的转弯模型等）与同领域公开资料重写。
+内容基于上述公开出版书籍的章节结构与理论整理，正文、图与交互均为本项目原创实现；不收录原书扫描页或大段原文。第三本书为扫描版中文译作，仅取章节结构用于编排，正文按一手文献（Dally & Seitz 的通道相关图、Duato 的充分条件、Glass & Ni 的转弯模型等）与同领域公开资料重写。第四本《典型逻辑电路》为本站自定大纲的原创讲义，不依据特定出版物，正文与实验同样原创。
 
 各书的著作权归原作者与出版方所有。

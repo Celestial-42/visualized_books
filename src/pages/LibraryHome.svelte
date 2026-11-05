@@ -33,12 +33,16 @@
         <div class="book-top">
           <span class="book-chip" aria-hidden="true">{book.no}</span>
           <span class="book-no mono">BOOK {book.no}</span>
-          <span class="book-pages mono">{book.pages} p · {readyChapters(book).length}/{book.chapters.length} ch</span>
+          <span class="book-pages mono">
+            {book.pages === '—' ? t('原创', 'original') : `${book.pages} p`} · {readyChapters(book).length}/{book.chapters.length} ch
+          </span>
         </div>
 
         <h2 class="display">{lang.value === 'en' ? book.titleEn : book.title}</h2>
         {#if lang.value !== 'en'}<p class="book-en">{book.titleEn}</p>{/if}
-        <p class="book-sub" title={`${book.authors} · ${book.edition}`}>{book.authors} · {book.edition}</p>
+        <p class="book-sub" title={`${book.authors} · ${lang.value === 'en' ? book.editionEn ?? book.edition : book.edition}`}>
+          {book.authors} · {lang.value === 'en' ? book.editionEn ?? book.edition : book.edition}
+        </p>
 
         {#if book.id === 'memory-primer'}
           <svg class="art" viewBox="0 0 420 96" fill="none" aria-hidden="true">
@@ -87,6 +91,40 @@
               <text x="252" y="34" class="art-note">{t('4×4 mesh · 16 个路由器', '4×4 mesh · 16 routers')}</text>
               <text x="252" y="50" class="art-note">{t('链路 24 条 · 对剖 4 条', '24 links · bisection 4')}</text>
               <text x="252" y="66" class="art-note">{t('平均 2.67 跳', '2.67 hops on average')}</text>
+            </g>
+          </svg>
+        {:else if book.id === 'typical-logic'}
+          <svg class="art" viewBox="0 0 420 96" fill="none" aria-hidden="true">
+            <g class="fifo">
+              {#each Array(8) as _, i}
+                <rect
+                  x={12 + i * 38}
+                  y="18"
+                  width="32"
+                  height="26"
+                  rx="5"
+                  class="cell"
+                  class:filled={i >= 2 && i < 7}
+                  class:head={i === 2}
+                />
+                <text x={28 + i * 38} y="35" class="cell-t" text-anchor="middle">{i}</text>
+              {/each}
+              <path d="M84 46V58H84" class="ptr" marker-end="url(#lf1)" />
+              <path d="M274 46V58H274" class="ptr acc" marker-end="url(#lf2)" />
+              <text x="70" y="70" class="art-note">rptr</text>
+              <text x="282" y="70" class="art-note">wptr</text>
+              <text x="330" y="30" class="art-note">{t('count = 5', 'count = 5')}</text>
+              <text x="330" y="46" class="art-note">{t('full = 0 · empty = 0', 'full = 0 · empty = 0')}</text>
+              <text x="330" y="62" class="art-note">{t('同步 FIFO', 'synchronous FIFO')}</text>
+              <text x="12" y="88" class="art-note">{t('一块存储 · 两个指针 · 三种满空判定', 'one memory · two pointers · three flag schemes')}</text>
+              <defs>
+                <marker id="lf1" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+                  <path d="M0,0 L8,4 L0,8 z" fill="#b4543a" />
+                </marker>
+                <marker id="lf2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+                  <path d="M0,0 L8,4 L0,8 z" fill="#2f5d62" />
+                </marker>
+              </defs>
             </g>
           </svg>
         {:else}
@@ -359,6 +397,37 @@
 
   .mesh .route-dot.dest {
     fill: var(--ember);
+  }
+
+  .fifo .cell {
+    fill: var(--paper-2);
+    stroke: var(--line);
+  }
+
+  .fifo .cell.filled {
+    fill: var(--card);
+    stroke: #cfded9;
+  }
+
+  .fifo .cell.head {
+    stroke: var(--ember);
+    stroke-width: 1.2;
+  }
+
+  .fifo .cell-t {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    fill: var(--muted);
+  }
+
+  .fifo .ptr {
+    stroke: var(--ember);
+    stroke-width: 1.1;
+    fill: none;
+  }
+
+  .fifo .ptr.acc {
+    stroke: var(--accent);
   }
 
   .turn .node {

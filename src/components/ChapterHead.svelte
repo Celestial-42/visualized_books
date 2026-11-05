@@ -17,7 +17,7 @@
 <header class="chap-head">
   {#if book}
     <a class="source-line chap-source" href={`#/book/${book.id}`}>
-      <span class="sl-tag">{t('原书', 'Source')}</span>
+      <span class="sl-tag">{book.original ? t('原创', 'Original') : t('原书', 'Source')}</span>
       <span class="sl-title">{book.origin}</span>
       {#if lang.value !== 'en' && book.originZh}<span class="sl-zh">{book.originZh}</span>{/if}
       <span class="sl-meta">{book.authors} · {lang.value === 'en' ? book.editionEn ?? book.edition : book.edition}</span>

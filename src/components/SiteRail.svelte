@@ -114,7 +114,7 @@
         {#if lang.value === 'en'}
           {libraryDone}/{libraryTotal} chapters read across {BOOKS.length} books
         {:else}
-          两本书共读 {libraryDone}/{libraryTotal} 章
+          {BOOKS.length} 本书共读 {libraryDone}/{libraryTotal} 章
         {/if}
       {/if}
     </div>

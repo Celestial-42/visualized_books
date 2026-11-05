@@ -1,8 +1,9 @@
 import { CHAPTERS as MP_CHAPTERS, PARTS as MP_PARTS, type Chapter } from './content';
 import { OCN_CHAPTERS, OCN_PARTS } from './noc/content';
 import { ICN_CHAPTERS, ICN_PARTS } from './icn/content';
+import { LOGIC_CHAPTERS, LOGIC_PARTS } from './logic/content';
 
-export type BookId = 'memory-primer' | 'on-chip-networks' | 'interconnection-networks';
+export type BookId = 'memory-primer' | 'on-chip-networks' | 'interconnection-networks' | 'typical-logic';
 
 export type Part = { id: string; label: string; en: string };
 
@@ -18,6 +19,8 @@ export type Book = {
   origin: string;
   /** Chinese edition title, when the pages follow a translation rather than the original. */
   originZh?: string;
+  /** An original course sequence rather than a published book. */
+  original?: boolean;
   authors: string;
   edition: string;
   editionEn?: string;
@@ -73,6 +76,24 @@ export const BOOKS: Book[] = [
     pages: '400',
     parts: ICN_PARTS,
     chapters: ICN_CHAPTERS
+  },
+  {
+    id: 'typical-logic',
+    no: '04',
+    title: '典型逻辑电路',
+    titleEn: 'Typical Logic Circuits',
+    spine: 'FIFO × Timing',
+    short: '典型逻辑电路',
+    shortEn: 'Typical Logic Circuits',
+    origin: 'Typical Logic Circuits',
+    originZh: '典型逻辑电路',
+    original: true,
+    authors: 'Visualized Books',
+    edition: '原创讲义 · 2026',
+    editionEn: 'Original notes · 2026',
+    pages: '—',
+    parts: LOGIC_PARTS,
+    chapters: LOGIC_CHAPTERS
   }
 ];
 

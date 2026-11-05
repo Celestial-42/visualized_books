@@ -6,6 +6,7 @@
   import Home from './pages/Home.svelte';
   import OcnHome from './pages/ocn/Home.svelte';
   import IcnHome from './pages/icn/Home.svelte';
+  import LogicHome from './pages/logic/Home.svelte';
   import Ch1 from './pages/Ch1.svelte';
   import Ch2 from './pages/Ch2.svelte';
   import Ch3 from './pages/Ch3.svelte';
@@ -27,6 +28,7 @@
   import Ocn8 from './pages/ocn/Ch8.svelte';
   import Icn3 from './pages/icn/Ch3.svelte';
   import Icn4 from './pages/icn/Ch4.svelte';
+  import Logic1 from './pages/logic/Ch1.svelte';
   import { parseRoute, type Book } from './lib/books';
   import { router } from './lib/router.svelte';
   import { markVisited } from './lib/progress.svelte';
@@ -62,7 +64,8 @@
     'on-chip-networks/ch7': Ocn7,
     'on-chip-networks/ch8': Ocn8,
     'interconnection-networks/ch3': Icn3,
-    'interconnection-networks/ch4': Icn4
+    'interconnection-networks/ch4': Icn4,
+    'typical-logic/ch1': Logic1
   };
 
   const page = $derived(
@@ -86,6 +89,8 @@
         <Home />
       {:else if route.book.id === 'on-chip-networks'}
         <OcnHome />
+      {:else if route.book.id === 'typical-logic'}
+        <LogicHome />
       {:else}
         <IcnHome />
       {/if}

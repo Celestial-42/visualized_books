@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from '../lib/lang.svelte';
+
   type Q = { q: string; options: string[]; answer: number; why: string };
 
   let { questions }: { questions: Q[] } = $props();
@@ -32,7 +34,7 @@
       </div>
       {#if picked[qi] !== undefined}
         <p class="q-why" class:bad={picked[qi] !== item.answer}>
-          {#if picked[qi] === item.answer}<b>对了。</b>{:else}<b>不对。</b>{/if}
+          {#if picked[qi] === item.answer}<b>{t('对了。', 'Correct.')}</b>{:else}<b>{t('不对。', 'Not quite.')}</b>{/if}
           {item.why}
         </p>
       {/if}
