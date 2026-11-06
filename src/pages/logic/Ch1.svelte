@@ -52,7 +52,7 @@
         <p>
           This chapter is deliberately single-clock. Every flop is sampled by the same edge, and both flags are defined
           in that clock. Crossing domains needs a different machine — Gray pointers, synchronisers, and a full/empty
-          proof per domain — which is §1.2 here, with the general machinery in Chapter 2. Do not smuggle a binary
+          proof per domain — which is Chapter 2, with the general machinery in Chapter 3. Do not smuggle a binary
           pointer across a clock boundary and call it done; the extra bit that solves full/empty here does nothing for
           metastability.
         </p>
@@ -69,7 +69,7 @@
         </p>
         <p>
           本章刻意只讲单时钟：所有触发器由同一个沿采样，full/empty 也在这个时钟里定义。跨时钟是另一台机器——
-          格雷码指针、同步器、以及在各自时钟域里分别成立的满空证明——那是 §1.2，更一般的机制在第 2 章。
+          格雷码指针、同步器、以及在各自时钟域里分别成立的满空证明——那是第 2 章，更一般的机制在第 3 章。
           不要把二进制指针直接搬过时钟沿，这里多出来的那一位解决不了亚稳态。
         </p>
       {/if}
@@ -748,8 +748,8 @@
         <p>
           And keep the boundary in mind: everything here is one clock. An asynchronous FIFO needs Gray-coded pointers,
           two-flop synchronisers, and a full/empty decision made separately in each domain. A binary pointer crossing a
-          clock can change several bits in one sample; no amount of extra-bit logic fixes that. That machine is §1.2
-          and Chapter 2; do not mix it into a synchronous design “for safety”.
+          clock can change several bits in one sample; no amount of extra-bit logic fixes that. That machine is
+          Chapter 2, with the general CDC rules in Chapter 3; do not mix it into a synchronous design “for safety”.
         </p>
         <p>
           Verification should attack the corners, not the average. The invariants are short: <code>0 ≤ count ≤ D</code>;
@@ -772,7 +772,7 @@
         </p>
         <p>
           还要记住边界：这里全是单时钟。异步 FIFO 需要格雷码指针、两级同步器，以及在两个时钟域里分别做出的满空判定。
-          二进制指针跨时钟时可能多位同时变化，再多一位逻辑也救不了。那台机器属于 §1.2 与第 2 章，不要为了“保险”把它混进同步设计。
+          二进制指针跨时钟时可能多位同时变化，再多一位逻辑也救不了。那台机器属于第 2 章，更一般的跨时钟规则在第 3 章，不要为了“保险”把它混进同步设计。
         </p>
         <p>
           验证要打角落，不要打平均。不变量很短：<code>0 ≤ count ≤ D</code>；full 时不接受写；empty 时不接受读；
@@ -860,12 +860,11 @@
     <div class="next">
       <span class="next-label">{t('接下来', 'Next')}</span>
       <div class="next-grid">
-        <div class="next-card planned">
-          <span class="next-no display">1.2</span>
-          <strong>{t('异步 FIFO（计划中）', 'Asynchronous FIFO (planned)')}</strong>
-          <span>{t('同一章的第二小节：格雷码指针、两级同步器，以及各自时钟域里的满空证明。', 'The second section of this chapter: Gray pointers, two-flop synchronisers, and a full/empty proof in each clock domain.')}</span>
-          <span class="soon">{t('尚未上线', 'not live yet')}</span>
-        </div>
+        <button class="next-card" onclick={() => open('typical-logic', 'ch2')}>
+          <span class="next-no display">02</span>
+          <strong>{t('异步 FIFO', 'Asynchronous FIFO')}</strong>
+          <span>{t('格雷码指针、两级同步器，以及各自时钟域里的满空证明。', 'Gray pointers, two-flop synchronisers, and a full/empty proof in each clock domain.')}</span>
+        </button>
         <button class="next-card" onclick={() => open('memory-primer', 'ch4')}>
           <span class="next-no display">04</span>
           <strong>{t('对照：TSO 的 store buffer', 'Contrast: the TSO store buffer')}</strong>
@@ -1017,17 +1016,6 @@
     box-shadow: var(--shadow-lift);
   }
 
-  .next-card.planned {
-    opacity: 0.72;
-    cursor: default;
-  }
-
-  .next-card.planned:hover {
-    transform: none;
-    border-color: var(--line);
-    box-shadow: none;
-  }
-
   .next-no {
     font-size: 14px;
     color: var(--gold);
@@ -1044,13 +1032,6 @@
     color: var(--ink-3);
   }
 
-  .next-card .soon {
-    margin-top: 4px;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
 
   @media (max-width: 560px) {
     .table-wrap .table {

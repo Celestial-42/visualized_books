@@ -17,26 +17,40 @@ export const LOGIC_CHAPTERS: Chapter[] = [
     status: 'ready',
     part: 'queue',
     blurb:
-      '一块双端口存储、两个指针、三种满空判定：先把 1.1 同步 FIFO 的每一个边界跑一遍；1.2 异步 FIFO 与跨时钟域随后。',
+      '一块双端口存储、两个指针、三种满空判定：先把同步 FIFO 的每一个边界跑一遍，再跨时钟。',
     blurbEn:
-      'One dual-port memory, two pointers, three full/empty schemes: run every boundary of §1.1 synchronous FIFO first; §1.2 asynchronous FIFO and clock-domain crossing follow.'
+      'One dual-port memory, two pointers, three full/empty schemes: run every boundary of the synchronous FIFO before crossing a clock.'
   },
   {
     n: 2,
     slug: 'ch2',
+    title: '异步 FIFO',
+    shortEn: 'Asynchronous FIFO',
+    en: 'Asynchronous FIFO',
+    pages: '—',
+    status: 'ready',
+    part: 'queue',
+    blurb:
+      '两个时钟、一条格雷码指针、两级同步器：看多比特偏斜怎样制造非法指针，以及 full 与 empty 为什么只能保守。',
+    blurbEn:
+      'Two clocks, one Gray pointer and a two-flop synchroniser: watch multi-bit skew create illegal pointers, and why full/empty can only be conservative.'
+  },
+  {
+    n: 3,
+    slug: 'ch3',
     title: '跨时钟域',
     shortEn: 'Clock-Domain Crossing',
     en: 'Clock-Domain Crossing',
     pages: '—',
     status: 'planned',
     part: 'queue',
-    blurb: '单比特同步、脉冲同步、握手与复位：先分清哪些信号能采样，哪些必须握手；再把异步 FIFO 的两半接起来。',
+    blurb: '单比特同步、脉冲同步、握手与复位：先分清哪些信号能采样，哪些必须握手。',
     blurbEn:
-      'Single-bit synchronisation, pulse transfer, handshakes and reset: which signals may be sampled, and which must be handshaken — then join the two halves of an asynchronous FIFO.'
+      'Single-bit synchronisation, pulse transfer, handshakes and reset: which signals may be sampled, and which must be handshaken.'
   },
   {
-    n: 3,
-    slug: 'ch3',
+    n: 4,
+    slug: 'ch4',
     title: '握手与反压',
     shortEn: 'Handshake & Backpressure',
     en: 'Handshake & Backpressure',
@@ -48,8 +62,8 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'The three stalls of valid/ready, skid buffers and credit: turn “can you take it?” from a wire into a contract.'
   },
   {
-    n: 4,
-    slug: 'ch4',
+    n: 5,
+    slug: 'ch5',
     title: '仲裁器',
     shortEn: 'Arbiters',
     en: 'Arbiters',
@@ -61,8 +75,8 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'Fixed priority, round-robin and matrix arbitration: for the same requests, which kind of fairness counts as fair.'
   },
   {
-    n: 5,
-    slug: 'ch5',
+    n: 6,
+    slug: 'ch6',
     title: '流水线',
     shortEn: 'Pipelines',
     en: 'Pipelines',
@@ -74,8 +88,8 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'Cut the combinational logic, then put stalls, bubbles and forwarding back: throughput and latency start to separate.'
   },
   {
-    n: 6,
-    slug: 'ch6',
+    n: 7,
+    slug: 'ch7',
     title: '存储阵列',
     shortEn: 'Memory Arrays',
     en: 'Memory Arrays',
@@ -87,8 +101,8 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'SRAM read/write timing, banking and read-write conflicts: the temper of the memory behind a FIFO.'
   },
   {
-    n: 7,
-    slug: 'ch7',
+    n: 8,
+    slug: 'ch8',
     title: '加法器与乘法器',
     shortEn: 'Adders & Multipliers',
     en: 'Adders and Multipliers',

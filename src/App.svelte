@@ -29,6 +29,7 @@
   import Icn3 from './pages/icn/Ch3.svelte';
   import Icn4 from './pages/icn/Ch4.svelte';
   import Logic1 from './pages/logic/Ch1.svelte';
+  import Logic2 from './pages/logic/Ch2.svelte';
   import { parseRoute, type Book } from './lib/books';
   import { router } from './lib/router.svelte';
   import { markVisited } from './lib/progress.svelte';
@@ -65,7 +66,8 @@
     'on-chip-networks/ch8': Ocn8,
     'interconnection-networks/ch3': Icn3,
     'interconnection-networks/ch4': Icn4,
-    'typical-logic/ch1': Logic1
+    'typical-logic/ch1': Logic1,
+    'typical-logic/ch2': Logic2
   };
 
   const page = $derived(
