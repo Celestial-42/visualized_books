@@ -25,7 +25,7 @@
 <div class="page">
   <div class="reader">
     <ChapterHead
-      n={1}
+      n={2}
       title="FIFO"
       en="First In, First Out"
       lede={t(
@@ -46,13 +46,13 @@
           a read only when <code>rd_en && !empty</code>. The flags are not decoration: a false full throws away
           bandwidth, and a false empty either returns stale data or advances the read pointer past a word nobody read.
           A FIFO that is “almost right” is worse than no FIFO, because the failure appears once every million cycles.
-          There is one refinement we will meet in §1.1.3: if a full FIFO serves a read in the same cycle, a lookahead
+          There is one refinement we will meet in §2.1.3: if a full FIFO serves a read in the same cycle, a lookahead
           policy may let the write use the slot that read frees. Read the rule literally for now.
         </p>
         <p>
           This chapter is deliberately single-clock. Every flop is sampled by the same edge, and both flags are defined
           in that clock. Crossing domains needs a different machine — Gray pointers, synchronisers, and a full/empty
-          proof per domain — which is Chapter 2, with the general machinery in Chapter 3. Do not smuggle a binary
+          proof per domain — which is Chapter 3, with the general machinery in Chapter 4. Do not smuggle a binary
           pointer across a clock boundary and call it done; the extra bit that solves full/empty here does nothing for
           metastability.
         </p>
@@ -64,19 +64,19 @@
         <p>
           这个承诺在时钟沿上变成一份契约：只有 <code>wr_en && !full</code> 时写才算数，只有 <code>rd_en && !empty</code>
           时读才算数。full/empty 不是装饰：假的 full 会白白丢带宽，假的 empty 要么返回过期数据，要么把读指针推过一个没人读过的字。
-          一个“差不多对”的 FIFO 比没有 FIFO 更危险，因为故障可能一百万拍才出现一次。§1.1.3 还会补一个细化：
+          一个“差不多对”的 FIFO 比没有 FIFO 更危险，因为故障可能一百万拍才出现一次。§2.1.3 还会补一个细化：
           满 FIFO 在同一拍服务了读时，前视策略可以让写使用读腾出的位置；现在先按字面理解这条契约。
         </p>
         <p>
           本章刻意只讲单时钟：所有触发器由同一个沿采样，full/empty 也在这个时钟里定义。跨时钟是另一台机器——
-          格雷码指针、同步器、以及在各自时钟域里分别成立的满空证明——那是第 2 章，更一般的机制在第 3 章。
+          格雷码指针、同步器、以及在各自时钟域里分别成立的满空证明——那是第 3 章，更一般的机制在第 4 章。
           不要把二进制指针直接搬过时钟沿，这里多出来的那一位解决不了亚稳态。
         </p>
       {/if}
     </div>
 
     <Figure
-      no={t('图 1.1', 'Figure 1.1')}
+      no={t('图 2.1', 'Figure 2.1')}
       caption={t(
         '同步 FIFO 的端口契约。full/empty 必须在时钟沿之前已经稳定；almost_full/almost_empty 是提前量，不是第二个 full。',
         'The synchronous FIFO contract. full/empty must be stable before the edge; almost_full/almost_empty are early warning, not a second full.'
@@ -135,7 +135,7 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">1.1</span>{t('同步 FIFO', 'Synchronous FIFO')}</h3>
+      <h3><span class="h-no">2.1</span>{t('同步 FIFO', 'Synchronous FIFO')}</h3>
       {#if en}
         <p>
           We will answer five questions in order: where the words live, how full and empty are decided, when read data
@@ -151,7 +151,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">1.1.1</span>{t('一块存储、两个指针', 'One memory, two pointers')}</h3>
+      <h3><span class="h-no">2.1.1</span>{t('一块存储、两个指针', 'One memory, two pointers')}</h3>
       {#if en}
         <p>
           Take a memory of depth <code>D = 2^N</code>, one write port and one read port. The write pointer
@@ -193,7 +193,7 @@
     </div>
 
     <Figure
-      no={t('图 1.2', 'Figure 1.2')}
+      no={t('图 2.2', 'Figure 2.2')}
       caption={t(
         '8 深同步 FIFO 工作台。填满看 full、排空看 empty、同拍读写看 count 是否原地不动；打开“允许违规”再写满一次，会看到最旧的字被覆盖、丢失计数加一。',
         'An 8-deep synchronous FIFO workbench. Fill it to see full, drain it to see empty, and use read+write to watch count stand still. Turn on violations and write once more when full: the oldest word is overwritten and the loss counter increments.'
@@ -216,7 +216,7 @@
           <code>D</code> and no word is lost. Turn off “let the read free a slot” and the same click rejects the
           write: the conservative flag saw full at the start of the cycle. Both are legal designs; they differ in
           whether a full FIFO can sustain one word per cycle while both sides are active. We will price that choice in
-          §1.1.3.
+          §2.1.3.
         </p>
       {:else}
         <p>
@@ -228,13 +228,13 @@
           第二，实验在同一拍里先读后写。FIFO 满时按“同拍读写”，读先腾出一个位置，写又把它填上，
           于是 <code>count</code> 原地不动、也没有丢字。把“满时同拍读写”关掉，同一次点击就会拒绝写：
           保守的满标志在周期开始时就看到了 full。两种都是合法设计，差别只在“满 FIFO 在两侧同时活跃时还能不能每拍过一个字”。
-          这个选择的账，§1.1.3 再算。
+          这个选择的账，§2.1.3 再算。
         </p>
       {/if}
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">1.1.2</span>{t('满与空：等号不能同时成立', 'Full and empty cannot share one equality')}</h3>
+      <h3><span class="h-no">2.1.2</span>{t('满与空：等号不能同时成立', 'Full and empty cannot share one equality')}</h3>
       {#if en}
         <p>
           Empty is easy: <code>wptr == rptr</code> (all address bits equal). Full is the problem: after
@@ -302,7 +302,7 @@
     </div>
 
     <Figure
-      no={t('图 1.3', 'Figure 1.3')}
+      no={t('图 2.3', 'Figure 2.3')}
       caption={t(
         '以 4 深为例：同样的低 2 位地址 10，左边是空、右边是满。多出来的最高位（010 对 110，或一个计数器）才是区分两者的那一位状态；只看地址永远解不开这个等号。',
         'Depth 4, so each pointer is three bits: the same low address 10 is empty on the left and full on the right. The extra MSB (010 versus 110, or a counter) is the missing state; the address alone can never tell them apart.'
@@ -354,7 +354,7 @@
     </Figure>
 
     <Figure
-      no={t('图 1.4', 'Figure 1.4')}
+      no={t('图 2.4', 'Figure 2.4')}
       caption={t(
         '同一拍、同一个 count，三种写法的对照。把深度设 8、占用设 7、操作选“写”，寄存卡会显示“两种写法有别”：下一拍已经满，延迟比较器却还给出 0。',
         'The same cycle and the same count under three schemes. Set depth 8, occupancy 7 and operation “write”: the register card reports “the two differ” — full next cycle, while the delayed comparator still says 0.'
@@ -399,7 +399,7 @@
     </div>
 
     <Figure
-      no={t('图 1.5', 'Figure 1.5')}
+      no={t('图 2.5', 'Figure 2.5')}
       caption={t(
         '满空判定的四种写法。前三种都正确，第四种（直接延迟比较器）是常见错误；它只在边界上出错，所以最容易通过随机测试。',
         'Four ways to decide full/empty. The first three are correct; the fourth (delayed comparator) is the common bug. It fails only at the boundary, which is why random tests miss it.'
@@ -452,7 +452,7 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">1.1.3</span>{t('读出与握手：数据什么时候算“到手”', 'Readout and handshake: when is a word delivered?')}</h3>
+      <h3><span class="h-no">2.1.3</span>{t('读出与握手：数据什么时候算“到手”', 'Readout and handshake: when is a word delivered?')}</h3>
       {#if en}
         <p>
           Writes are easy to time: data is captured at the edge when <code>wr_en && !full</code>. Reads have a choice.
@@ -480,7 +480,7 @@
           At the boundary, read and write may hit the same address in the same cycle. A simple dual-port memory can do
           both; check the read-during-write behavior of the memory you infer. If the FIFO is full and a read frees a
           slot, a lookahead full flag lets the write proceed and keeps full throughput; a conservative flag inserts a
-          bubble. This is the same choice as §1.1.2, now visible on the waveform.
+          bubble. This is the same choice as §2.1.2, now visible on the waveform.
         </p>
       {:else}
         <p>
@@ -503,13 +503,13 @@
         <p>
           边界上，同一拍读和写可能打到同一个地址。简单双端口存储可以同时做；但要确认你推断出的存储的 read-during-write 行为。
           如果 FIFO 满而读腾出了一个位置，带前视的 full 会让写继续、保持满吞吐；保守的 full 则插一个气泡。
-          这就是 §1.1.2 的选择，只是现在搬到了波形上。
+          这就是 §2.1.2 的选择，只是现在搬到了波形上。
         </p>
       {/if}
     </div>
 
     <Figure
-      no={t('图 1.6', 'Figure 1.6')}
+      no={t('图 2.6', 'Figure 2.6')}
       caption={t(
         '同一串 4 个字、同一组 ready，标准 FIFO 与 FWFT 的波形。切到“每隔一拍 ready”最容易看出区别：标准 FIFO 的输出寄存器会把字扣住，FWFT 则把下一个队头直接亮出来。首字、末字与空拍都由引擎现算。',
         'The same four words and the same ready pattern through standard and FWFT FIFOs. “Ready every other cycle” shows the difference best: the standard output register holds a word, while FWFT presents the next head. First/last/bubbles are computed.'
@@ -553,7 +553,7 @@
     </div>
 
     <Figure
-      no={t('图 1.7', 'Figure 1.7')}
+      no={t('图 2.7', 'Figure 2.7')}
       caption={t(
         '标准读出与 FWFT 的账。吞吐上限相同，差别在首字延迟、停顿后的恢复，以及读路径上多出来的选择器。',
         'The bill for standard readout and FWFT. The throughput ceiling is the same; the difference is first-word latency, recovery after a stall, and the extra mux in the read path.'
@@ -605,7 +605,7 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">1.1.4</span>{t('深度：突发与反压的账', 'Depth: the burst and backpressure bill')}</h3>
+      <h3><span class="h-no">2.1.4</span>{t('深度：突发与反压的账', 'Depth: the burst and backpressure bill')}</h3>
       {#if en}
         <p>
           “How deep?” is two questions. The first is capacity: how many words can arrive while the consumer is slower,
@@ -661,7 +661,7 @@
     </div>
 
     <Figure
-      no={t('图 1.8', 'Figure 1.8')}
+      no={t('图 2.8', 'Figure 2.8')}
       caption={t(
         '深度计算器。曲线是无反压时 FIFO 的占用；虚线是你选的深度。把深度调到峰值以下，卡片会显示丢了多少字；点“对齐所需深度”看仿真峰值加反应余量。',
         'The depth calculator. The curve is occupancy without backpressure; the dashed line is your chosen depth. Drop it below the peak and the card reports lost words; “match required” sets peak plus reaction margin.'
@@ -691,7 +691,7 @@
     </div>
 
     <Figure
-      no={t('图 1.9', 'Figure 1.9')}
+      no={t('图 2.9', 'Figure 2.9')}
       caption={t(
         '五组突发参数下由引擎算出的深度。峰值与估算可能差一个字；设计时取两者较大值，再按反应时间加余量。',
         'Depth for five burst settings, computed by the engine. The peak and the estimate may differ by one word; take the larger, then add the reaction margin.'
@@ -729,7 +729,7 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">1.1.5</span>{t('实现与验证清单', 'Implementation and verification checklist')}</h3>
+      <h3><span class="h-no">2.1.5</span>{t('实现与验证清单', 'Implementation and verification checklist')}</h3>
       {#if en}
         <p>
           A synchronous FIFO is small enough to fit on one screen, which is exactly why the details matter. Reset the
@@ -749,7 +749,7 @@
           And keep the boundary in mind: everything here is one clock. An asynchronous FIFO needs Gray-coded pointers,
           two-flop synchronisers, and a full/empty decision made separately in each domain. A binary pointer crossing a
           clock can change several bits in one sample; no amount of extra-bit logic fixes that. That machine is
-          Chapter 2, with the general CDC rules in Chapter 3; do not mix it into a synchronous design “for safety”.
+          Chapter 3, with the general CDC rules in Chapter 4; do not mix it into a synchronous design “for safety”.
         </p>
         <p>
           Verification should attack the corners, not the average. The invariants are short: <code>0 ≤ count ≤ D</code>;
@@ -772,7 +772,7 @@
         </p>
         <p>
           还要记住边界：这里全是单时钟。异步 FIFO 需要格雷码指针、两级同步器，以及在两个时钟域里分别做出的满空判定。
-          二进制指针跨时钟时可能多位同时变化，再多一位逻辑也救不了。那台机器属于第 2 章，更一般的跨时钟规则在第 3 章，不要为了“保险”把它混进同步设计。
+          二进制指针跨时钟时可能多位同时变化，再多一位逻辑也救不了。那台机器属于第 3 章，更一般的跨时钟规则在第 4 章，不要为了“保险”把它混进同步设计。
         </p>
         <p>
           验证要打角落，不要打平均。不变量很短：<code>0 ≤ count ≤ D</code>；full 时不接受写；empty 时不接受读；
@@ -790,7 +790,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">1.1.6</span>{t('自测', 'Check yourself')}</h3>
+      <h3><span class="h-no">2.1.6</span>{t('自测', 'Check yourself')}</h3>
       <Quiz
         questions={[
           {
@@ -861,7 +861,7 @@
       <span class="next-label">{t('接下来', 'Next')}</span>
       <div class="next-grid">
         <button class="next-card" onclick={() => open('typical-logic', 'ch2')}>
-          <span class="next-no display">02</span>
+          <span class="next-no display">03</span>
           <strong>{t('异步 FIFO', 'Asynchronous FIFO')}</strong>
           <span>{t('格雷码指针、两级同步器，以及各自时钟域里的满空证明。', 'Gray pointers, two-flop synchronisers, and a full/empty proof in each clock domain.')}</span>
         </button>

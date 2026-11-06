@@ -11,7 +11,7 @@
 | 01 | 共享内存图谱 / Shared Memory Atlas | Sorin, Nagarajan, Hill, Wood · *A Primer on Memory Consistency and Cache Coherence*, 2nd ed. 2020 | 11 章 | 从一致性模型到 Snoop/MESI 目录协议 |
 | 02 | 片上网络 / On-Chip Networks | Enright Jerger, Krishna, Peh · *On-Chip Networks*, 2nd ed. 2017 | 8 章 | 拓扑、路由、死锁、流控、路由器、性能、协议、案例 |
 | 03 | 并行互连网络 / Interconnection Networks | Duato, Yalamanchili, Ni · *Interconnection Networks: An Engineering Approach*（中文版 2004） | 第 3、4 章 | 死锁/活锁/饿死 + 路由算法；其余章节在书目页标注为计划中 |
-| 04 | 典型逻辑电路 / Typical Logic Circuits | 本站原创讲义，不依据特定出版物 | 第 1、2 章 | 同步 FIFO（满空判定、读出时序、深度）+ 异步 FIFO（格雷码、逐位偏斜采样、慢采样跨码字、双时钟满空）；跨时钟域在计划中 |
+| 04 | 典型逻辑电路 / Typical Logic Circuits | 本站原创讲义，不依据特定出版物 | 第 1、2、3 章 | 基础（组合/时序/异步）+ 同步 FIFO（满空、时序、深度）+ 异步 FIFO（格雷码、逐位偏斜、慢采样跨码字、双时钟满空）；跨时钟域在计划中 |
 
 ## 本地运行
 
@@ -43,7 +43,7 @@ src/
     content.ts          第 1 本书的章节元数据
     noc/                第 2 本书：章节元数据 + 拓扑/路由/流控/路由器/性能/协议引擎
     icn/                第 3 本书：章节元数据 + 转向分析、仲裁与活锁实验
-    logic/              第 4 本书：章节元数据 + 同步/异步 FIFO 状态机、格雷码采样与深度引擎
+    logic/              第 4 本书：章节元数据 + 基础逻辑、同步/异步 FIFO 状态机、格雷码采样与深度引擎
   pages/
     LibraryHome.svelte  书库首页
     Ch*.svelte          第 1 本书各章

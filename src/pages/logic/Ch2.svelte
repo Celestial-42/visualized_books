@@ -24,12 +24,12 @@
 <div class="page">
   <div class="reader">
     <ChapterHead
-      n={2}
+      n={3}
       title="异步 FIFO"
       en="Asynchronous FIFO"
       lede={t(
-        '第 1 章的 FIFO 有一个隐含前提：读写共享同一个时钟沿。把这个前提拿掉之后，full/empty 不再能在同一拍算出来，指针也不能以二进制直接跨域。本章只处理新增出来的问题：格雷码、两级同步器、逐位到达时间、为什么异步 FIFO 的满空必然是保守的，以及慢时钟一次跨过多个源码为什么不违反一位变化。',
-        'The FIFO in Chapter 1 quietly assumes one clock edge for both ports. Remove that assumption and full/empty can no longer be settled in the same cycle, and a binary pointer cannot cross the boundary directly. This chapter handles only the new problems: Gray code, two-flop synchronisers, per-bit arrival time, why asynchronous full/empty must be conservative, and why a slow clock that skips several source codes does not break the one-bit rule.'
+        '第 2 章的 FIFO 有一个隐含前提：读写共享同一个时钟沿。把这个前提拿掉之后，full/empty 不再能在同一拍算出来，指针也不能以二进制直接跨域。本章只处理新增出来的问题：格雷码、两级同步器、逐位到达时间、为什么异步 FIFO 的满空必然是保守的，以及慢时钟一次跨过多个源码为什么不违反一位变化。',
+        'The FIFO in Chapter 2 quietly assumes one clock edge for both ports. Remove that assumption and full/empty can no longer be settled in the same cycle, and a binary pointer cannot cross the boundary directly. This chapter handles only the new problems: Gray code, two-flop synchronisers, per-bit arrival time, why asynchronous full/empty must be conservative, and why a slow clock that skips several source codes does not break the one-bit rule.'
       )}
     />
 
@@ -49,9 +49,9 @@
           the chapter spends that property carefully.
         </p>
         <p>
-          Three questions organise the page: how a pointer is encoded before it crosses (§2.2), what a capture edge sees
-          while the bits are arriving (§2.3), and how the two domains use a stale copy of the other pointer to decide
-          full and empty (§2.4). The data path and reset rules follow in §2.5.
+          Three questions organise the page: how a pointer is encoded before it crosses (§3.2), what a capture edge sees
+          while the bits are arriving (§3.3), and how the two domains use a stale copy of the other pointer to decide
+          full and empty (§3.4). The data path and reset rules follow in §3.5.
         </p>
       {:else}
         <p>
@@ -65,14 +65,14 @@
           采样解析之后指针只能是旧值或新值。本章剩下的内容，就是谨慎地使用这条性质。
         </p>
         <p>
-          三个问题组织这一页：指针跨域前怎么编码（§2.2）、采样沿在各位陆续到达时看到什么（§2.3）、
-          两个域怎样用对方那份过时的指针副本判满判空（§2.4）。数据路径与复位放在 §2.5。
+          三个问题组织这一页：指针跨域前怎么编码（§3.2）、采样沿在各位陆续到达时看到什么（§3.3）、
+          两个域怎样用对方那份过时的指针副本判满判空（§3.4）。数据路径与复位放在 §3.5。
         </p>
       {/if}
     </div>
 
     <Figure
-      no={t('图 2.1', 'Figure 2.1')}
+      no={t('图 3.1', 'Figure 3.1')}
       caption={t(
         '异步 FIFO 的分工：双时钟 RAM 承载数据，格雷码指针经两级同步器跨域，full 与 empty 各自留在本地域。跨域的只有指针，数据总线不跨。',
         'The division of labour: dual-clock RAM carries the payload, Gray pointers cross through two-flop synchronisers, and full/empty stay local to their own domains. Only pointers cross; the data bus does not.'
@@ -139,7 +139,7 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">2.1</span>{t('两个时钟，一个队列', 'Two clocks, one queue')}</h3>
+      <h3><span class="h-no">3.1</span>{t('两个时钟，一个队列', 'Two clocks, one queue')}</h3>
       {#if en}
         <p>
           The dual-clock memory is the easy part: it has a write port in the write domain and a read port in the read
@@ -155,7 +155,7 @@
         <p>
           That is also why the data bus is not the thing to synchronize. It is wide, it changes often, and its bits have
           different delays. The FIFO never asks the receiver to sample the data bus directly; it asks it to wait until
-          the synchronized pointer says there is a word, then read the stable array. The lab in §2.3 uses a pointer bus
+          the synchronized pointer says there is a word, then read the stable array. The lab in §3.3 uses a pointer bus
           to show what happens when this rule is broken.
         </p>
       {:else}
@@ -169,13 +169,13 @@
         </p>
         <p>
           这也是为什么该跨域的不是数据总线。它很宽、经常变、每一位延迟不同。FIFO 从不要求接收方直接采样数据总线；
-          它要求接收方等同步后的指针说“有字了”，再去读稳定的阵列。§2.3 的实验会用指针总线演示破坏这条规则的后果。
+          它要求接收方等同步后的指针说“有字了”，再去读稳定的阵列。§3.3 的实验会用指针总线演示破坏这条规则的后果。
         </p>
       {/if}
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">2.2</span>{t('格雷码：一次只变一位', 'Gray code: one bit per step')}</h3>
+      <h3><span class="h-no">3.2</span>{t('格雷码：一次只变一位', 'Gray code: one bit per step')}</h3>
       {#if en}
         <p>
           A binary pointer is a compact lie when it crosses a clock boundary: it looks like one number, but on the wire
@@ -211,7 +211,7 @@
     </div>
 
     <Figure
-      no={t('图 2.2', 'Figure 2.2')}
+      no={t('图 3.2', 'Figure 3.2')}
       caption={t(
         '4 位指针的二进制与格雷码。每一步格雷码只变 1 位；7→8 时二进制变 4 位。表中位变化数由引擎现算。',
         'Binary and Gray for a 4-bit pointer. Each Gray step changes one bit; 7→8 changes four binary bits. The change counts are computed.'
@@ -251,7 +251,7 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">2.3</span>{t('跨域采样：多比特到达时间不同', 'Crossing: bits do not arrive together')}</h3>
+      <h3><span class="h-no">3.3</span>{t('跨域采样：多比特到达时间不同', 'Crossing: bits do not arrive together')}</h3>
       {#if en}
         <p>
           The interesting moment is not the steady state; it is the edge. Launch a pointer change at time zero. Each bit
@@ -268,7 +268,7 @@
         </p>
         <p>
           The lab puts Gray and binary side by side; the bus in the experiment is the pointer, because the payload
-          stays in RAM (§2.5). Move the capture phase past the transition and watch the Gray lane step from 7 to 8
+          stays in RAM (§3.5). Move the capture phase past the transition and watch the Gray lane step from 7 to 8
           while the binary lane sweeps through intermediate values. The strip below the waveform counts
           illegal phases over a full sweep; the skew slider makes the window wider or narrower. At zero skew the binary
           bus is not obviously broken because all bits move together — which is exactly why the bug survives a
@@ -286,7 +286,7 @@
           第二级给目的域一个干净值，代价是延迟。
         </p>
         <p>
-          实验把格雷码和二进制并排；实验里的总线是指针，数据本身留在 RAM（§2.5）。把采样相位推过跳变，
+          实验把格雷码和二进制并排；实验里的总线是指针，数据本身留在 RAM（§3.5）。把采样相位推过跳变，
           格雷车道从 7 走到 8，二进制车道会扫过一串中间值。
           波形下方的扫描条统计整个相位范围内有多少个非法采样点；偏斜滑杆让窗口变宽或变窄。偏斜为零时，二进制看起来没坏，
           因为所有位一起动——这正是这个 bug 能在零延迟仿真里活下来的原因。
@@ -295,7 +295,7 @@
     </div>
 
     <Figure
-      no={t('图 2.3', 'Figure 2.3')}
+      no={t('图 3.3', 'Figure 3.3')}
       caption={t(
         '以 4 位指针作为多比特总线的样本：各位到达时间不同，采样沿落在不同位置会得到不同组合。格雷码只会在 7 与 8 之间跳，二进制会出现 4、6、12 等非法指针。红色扫描段是引擎按 101 个采样相位算出的非法区间。',
         'A 4-bit pointer stands in for the multi-bit bus: its bits arrive at different times, and a capture edge at different positions sees different combinations. Gray only steps between 7 and 8, while binary can produce illegal pointers such as 4, 6 or 12. Red sweep segments are the illegal phases computed over 101 capture positions.'
@@ -332,7 +332,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">2.3.1</span>{t('慢采样跨过多个码字，为什么仍然成立', 'Why a slow sample may skip many codes')}</h3>
+      <h3><span class="h-no">3.3.1</span>{t('慢采样跨过多个码字，为什么仍然成立', 'Why a slow sample may skip many codes')}</h3>
       {#if en}
         <p>
           A common objection goes like this: if the slow clock sees two or three fast rising edges inside one of its
@@ -370,7 +370,7 @@
         <p>
           One nuance separates this from a licence to ignore timing: the captured value can be an <em>older</em>
           pointer than the one currently on the bus, because the capture happened before the latest change or the
-          synchronizer is still resolving. That is staleness, not illegality. §2.4 uses staleness conservatively. What
+          synchronizer is still resolving. That is staleness, not illegality. §3.4 uses staleness conservatively. What
           must never happen is a value the source never had.
         </p>
       {:else}
@@ -403,13 +403,13 @@
         </div>
         <p>
           有一个细节把它和“可以不管时序”区分开：采到的值可能比总线上当前的值<em>旧</em>，因为采样发生在最新变化之前，
-          或者同步器还在解析。这是过时，不是非法；§2.4 会保守地使用这份过时。绝不允许出现的，是源端从未有过的值。
+          或者同步器还在解析。这是过时，不是非法；§3.4 会保守地使用这份过时。绝不允许出现的，是源端从未有过的值。
         </p>
       {/if}
     </div>
 
     <Figure
-      no={t('图 2.4', 'Figure 2.4')}
+      no={t('图 3.4', 'Figure 3.4')}
       caption={t(
         '慢时钟每 N 个快拍采样一次。条纹显示源指针在两次采样之间扫过的码字；注意两次采样可以是 0、4、8，彼此并不相邻。Gray 每次采样仍是合法码，Binary 可能在跳变窗口采到中间值；周期、相位与偏斜都可调。',
         'The slow clock samples once every N fast ticks. The strip shows the source pointer sweeping between samples; two samples can be 0, 4 and 8, nowhere near adjacent. Every Gray capture is still a legal code, while binary may hit a mid-transition value. Period, phase and skew are adjustable.'
@@ -438,7 +438,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">2.4</span>{t('满与空：用一份过时的指针', 'Full and empty: a stale pointer is all you have')}</h3>
+      <h3><span class="h-no">3.4</span>{t('满与空：用一份过时的指针', 'Full and empty: a stale pointer is all you have')}</h3>
       {#if en}
         <p>
           The write side cannot know the current read pointer; it only has a copy that crossed two flops and therefore
@@ -477,7 +477,7 @@
     </div>
 
     <Figure
-      no={t('图 2.5', 'Figure 2.5')}
+      no={t('图 3.5', 'Figure 3.5')}
       caption={t(
         '双时钟 FIFO 波形。切换写快/读快/同速，单步看 full、empty、两级同步器和实际占用。被拒的写或读来自保守标志，不是数据坏了。',
         'Dual-clock FIFO waveform. Switch write-fast/read-fast/equal and step through full, empty, the two synchroniser stages and actual occupancy. Rejected writes or reads come from conservative flags, not corrupt data.'
@@ -515,7 +515,7 @@
     </div>
 
     <Figure
-      no={t('图 2.6', 'Figure 2.6')}
+      no={t('图 3.6', 'Figure 3.6')}
       caption={t(
         '两侧的判定都只用本地指针和一份同步副本。保守方向不同，安全性相同：宁可少写/少读，不可越界。',
         'Both sides use only a local pointer and a synchronized copy. The conservative directions differ; the safety property is the same: rather stall than cross the boundary.'
@@ -553,14 +553,14 @@
     </Figure>
 
     <div class="prose">
-      <h3><span class="h-no">2.5</span>{t('数据路径、复位与实现', 'Data path, reset and implementation')}</h3>
+      <h3><span class="h-no">3.5</span>{t('数据路径、复位与实现', 'Data path, reset and implementation')}</h3>
       {#if en}
         <p>
           The payload never crosses the boundary as a bus. It is written into the dual-clock array at
           <code>wclk</code> and read out at <code>rclk</code>, after the synchronized pointer has told the read side that
           the word exists. The write data is stable for a full write cycle before the write pointer is synchronized, so
           per-bit data skew is irrelevant. If you instead send the data bus straight across and trust the receiver to
-          sample it, the binary lane in §2.3 is exactly the failure you get. This is the reason an async FIFO exists.
+          sample it, the binary lane in §3.3 is exactly the failure you get. This is the reason an async FIFO exists.
         </p>
         <p>
           Reset is per domain. Bring both pointers to zero, reset the two-flop synchronizers, and make sure both domains
@@ -586,7 +586,7 @@
         <p>
           数据从不以总线形式跨域。它在 <code>wclk</code> 写进双时钟阵列，在同步指针告诉读侧“这个字存在”之后，由
           <code>rclk</code> 读出。写数据在写指针被同步之前已经稳定了整整一个写周期，所以逐位数据偏斜无关紧要。
-          如果你反过来把数据总线直接送过边界、让接收方去采，§2.3 的二进制车道就是你会得到的故障。这正是异步 FIFO 存在的理由。
+          如果你反过来把数据总线直接送过边界、让接收方去采，§3.3 的二进制车道就是你会得到的故障。这正是异步 FIFO 存在的理由。
         </p>
         <p>
           复位按域处理。两个指针归零，两级同步器复位，并确保两个域各自看到自己的复位释放。RAM 不复位；它在被读之前先被写。
@@ -614,7 +614,7 @@
     </div>
 
     <div class="prose">
-      <h3><span class="h-no">2.6</span>{t('自测', 'Check yourself')}</h3>
+      <h3><span class="h-no">3.6</span>{t('自测', 'Check yourself')}</h3>
       <Quiz
         questions={[
           {
@@ -695,13 +695,13 @@
       <span class="next-label">{t('接下来', 'Next')}</span>
       <div class="next-grid">
         <div class="next-card planned">
-          <span class="next-no display">03</span>
+          <span class="next-no display">04</span>
           <strong>{t('跨时钟域（计划中）', 'Clock-domain crossing (planned)')}</strong>
           <span>{t('把这一章的两级同步器展开成通用规则：单比特、脉冲、握手、复位与 MTBF。', 'Expand the two-flop synchroniser into general rules: single-bit, pulse, handshake, reset and MTBF.')}</span>
           <span class="soon">{t('尚未上线', 'not live yet')}</span>
         </div>
         <button class="next-card" onclick={() => open('typical-logic', 'ch1')}>
-          <span class="next-no display">01</span>
+          <span class="next-no display">02</span>
           <strong>{t('回看：同步 FIFO', 'Back: the synchronous FIFO')}</strong>
           <span>{t('同一个队列，两端共用时钟沿时，full/empty 可以精确到每一拍。', 'The same queue with a shared edge: full/empty can be exact every cycle.')}</span>
         </button>

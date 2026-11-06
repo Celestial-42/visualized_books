@@ -28,6 +28,7 @@
   import Ocn8 from './pages/ocn/Ch8.svelte';
   import Icn3 from './pages/icn/Ch3.svelte';
   import Icn4 from './pages/icn/Ch4.svelte';
+  import LogicBasics from './pages/logic/Basics.svelte';
   import Logic1 from './pages/logic/Ch1.svelte';
   import Logic2 from './pages/logic/Ch2.svelte';
   import { parseRoute, type Book } from './lib/books';
@@ -66,6 +67,7 @@
     'on-chip-networks/ch8': Ocn8,
     'interconnection-networks/ch3': Icn3,
     'interconnection-networks/ch4': Icn4,
+    'typical-logic/basics': LogicBasics,
     'typical-logic/ch1': Logic1,
     'typical-logic/ch2': Logic2
   };

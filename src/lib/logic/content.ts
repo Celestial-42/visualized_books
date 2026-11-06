@@ -1,6 +1,7 @@
 import type { Chapter } from '../content';
 
 export const LOGIC_PARTS = [
+  { id: 'ground', label: '基础', en: 'Foundations' },
   { id: 'queue', label: '队列与时钟', en: 'Queues & Clock' },
   { id: 'control', label: '控制与数据通路', en: 'Control & Datapath' },
   { id: 'store', label: '存储与运算', en: 'Storage & Arithmetic' }
@@ -9,6 +10,20 @@ export const LOGIC_PARTS = [
 export const LOGIC_CHAPTERS: Chapter[] = [
   {
     n: 1,
+    slug: 'basics',
+    title: '基础知识',
+    shortEn: 'Foundations',
+    en: 'Foundations',
+    pages: '—',
+    status: 'ready',
+    part: 'ground',
+    blurb:
+      '组合逻辑、时序逻辑、异步：三个词各配一个实验——毛刺从哪里来、状态怎样锁在沿上、两级同步器为什么只能救单比特。',
+    blurbEn:
+      'Combinational, sequential, asynchronous: one experiment each — where glitches come from, how state locks to an edge, and why two-flop synchronisers only rescue a single bit.'
+  },
+  {
+    n: 2,
     slug: 'ch1',
     title: 'FIFO',
     shortEn: 'FIFO',
@@ -22,7 +37,7 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'One dual-port memory, two pointers, three full/empty schemes: run every boundary of the synchronous FIFO before crossing a clock.'
   },
   {
-    n: 2,
+    n: 3,
     slug: 'ch2',
     title: '异步 FIFO',
     shortEn: 'Asynchronous FIFO',
@@ -31,12 +46,12 @@ export const LOGIC_CHAPTERS: Chapter[] = [
     status: 'ready',
     part: 'queue',
     blurb:
-      '两个时钟、一条格雷码指针、两级同步器：看多比特偏斜怎样制造非法指针，慢采样跳过多个码字为什么不违反一位变化，以及 full 与 empty 为什么只能保守。',
+      '两个时钟、一条格雷码指针、两级同步器：看多比特偏斜怎样制造非法指针，慢采样跳过多个码字为什么不违反一位变化，以及 full/empty 为什么只能保守。',
     blurbEn:
       'Two clocks, one Gray pointer and a two-flop synchroniser: watch multi-bit skew create illegal pointers, why a slow sample may skip many codes, and why full/empty can only be conservative.'
   },
   {
-    n: 3,
+    n: 4,
     slug: 'ch3',
     title: '跨时钟域',
     shortEn: 'Clock-Domain Crossing',
@@ -49,7 +64,7 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'Single-bit synchronisation, pulse transfer, handshakes and reset: which signals may be sampled, and which must be handshaken.'
   },
   {
-    n: 4,
+    n: 5,
     slug: 'ch4',
     title: '握手与反压',
     shortEn: 'Handshake & Backpressure',
@@ -62,7 +77,7 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'The three stalls of valid/ready, skid buffers and credit: turn “can you take it?” from a wire into a contract.'
   },
   {
-    n: 5,
+    n: 6,
     slug: 'ch5',
     title: '仲裁器',
     shortEn: 'Arbiters',
@@ -75,7 +90,7 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'Fixed priority, round-robin and matrix arbitration: for the same requests, which kind of fairness counts as fair.'
   },
   {
-    n: 6,
+    n: 7,
     slug: 'ch6',
     title: '流水线',
     shortEn: 'Pipelines',
@@ -88,7 +103,7 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'Cut the combinational logic, then put stalls, bubbles and forwarding back: throughput and latency start to separate.'
   },
   {
-    n: 7,
+    n: 8,
     slug: 'ch7',
     title: '存储阵列',
     shortEn: 'Memory Arrays',
@@ -101,7 +116,7 @@ export const LOGIC_CHAPTERS: Chapter[] = [
       'SRAM read/write timing, banking and read-write conflicts: the temper of the memory behind a FIFO.'
   },
   {
-    n: 8,
+    n: 9,
     slug: 'ch8',
     title: '加法器与乘法器',
     shortEn: 'Adders & Multipliers',

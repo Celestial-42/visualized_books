@@ -25,12 +25,12 @@
     <h1 class="display">Typical<span class="times">×</span><br class="hero-break" />Logic</h1>
     <p class="hero-sub">
       {#if lang.value === 'en'}
-        Every logic block is three bills: state, timing and area. This book starts with the FIFO — one memory,
-        two pointers, three ways to decide full and empty — then sends those pointers across two clocks and turns
-        each boundary into something you can step through.
+        Every logic block is three bills: state, timing and area. This book starts with three words — combinational,
+        sequential, asynchronous — then builds the FIFO, sends its pointers across two clocks, and turns every
+        boundary into something you can step through.
       {:else}
-        每个逻辑电路都记三笔账：状态、时序、面积。这本书从 FIFO 开始——一块存储、两个指针、三种满空判定——
-        再把指针送过两个时钟，把每一个边界都做成可以单步走过去、可以肉眼看到坏法的实验。
+        每个逻辑电路都记三笔账：状态、时序、面积。这本书从三个词开始——组合、时序、异步——再拼出 FIFO，
+        把指针送过两个时钟，把每一个边界都做成可以单步走过去、可以肉眼看到坏法的实验。
       {/if}
     </p>
     <div class="hero-meta">
@@ -41,12 +41,60 @@
   </header>
 
   <section class="lenses">
-    <button class="lens" onclick={() => open('ch1')}>
+    <button class="lens" onclick={() => open('basics')}>
       <div class="lens-head">
         <span class="lens-no">01</span>
         <div>
+          <h2 class="display">Basics</h2>
+          <span class="lens-en">{t('第 1 章 · 组合 / 时序 / 异步', 'Chapter 1 · combinational / sequential / async')}</span>
+        </div>
+      </div>
+
+      <svg class="lens-art" viewBox="0 0 680 150" fill="none" aria-hidden="true">
+        <g class="basis">
+          <text x="22" y="20" class="cap">{t('组合：毛刺', 'combinational: glitch')}</text>
+          <path d="M22 48H54M22 72H54" class="line" />
+          <path d="M54 40H102L92 80H64Z" class="box" />
+          <text x="78" y="64" class="mini" text-anchor="middle">MUX</text>
+          <path d="M102 60H142V52H152V68H162V60H204" class="pulse" />
+          <circle cx="156" cy="60" r="2.6" class="dot-bad" />
+
+          <text x="246" y="20" class="cap">{t('时序：沿', 'sequential: edge')}</text>
+          <rect x="258" y="44" width="100" height="58" rx="8" class="box" />
+          <text x="308" y="70" class="mini" text-anchor="middle">DFF</text>
+          <path d="M216 60H256" class="line" />
+          <path d="M358 60H396" class="line" />
+          <path d="M308 102V116H338V124H368" class="sig acc" />
+          <text x="308" y="134" class="mini" text-anchor="middle">clk ↑</text>
+
+          <text x="446" y="20" class="cap">{t('异步：没有共同沿', 'async: no shared edge')}</text>
+          <path d="M446 38H486V48H526V38H566V48H606" class="sig acc" />
+          <path d="M446 66H498V76H550V66H602V76H650" class="sig ember" />
+          <rect x="490" y="92" width="54" height="26" rx="5" class="box" />
+          <text x="517" y="109" class="mini" text-anchor="middle">2FF</text>
+          <text x="570" y="110" class="qmark">?</text>
+
+          <text x="22" y="142" class="cap">{t('0/1 · 只有延迟', '0/1 · delay only')}</text>
+          <text x="308" y="142" class="cap" text-anchor="middle">{t('状态只在沿上变', 'state only at the edge')}</text>
+          <text x="590" y="142" class="cap" text-anchor="middle">{t('先同步再使用', 'synchronise first')}</text>
+        </g>
+      </svg>
+
+      <p class="lens-text">
+        {t(
+          '三个实验把后面所有章节的词汇打底：A=B 时翻转选择信号，看组合毛刺；用 D/EN/RST 走两级寄存器，看状态怎样锁在沿上；把异步翻转扫过目的沿，看第一级出现“?”、第二级把它解析成 0/1。',
+          'Three experiments lay the vocabulary for the rest of the book: flip a select with A=B to see a glitch; step a two-stage register with D/EN/RST to see state lock to an edge; sweep an async toggle across a destination edge to see Q1 show “?” and Q2 resolve it to 0/1.'
+        )}
+      </p>
+      <span class="lens-go">{t('第 1 章 · 基础知识 →', 'Chapter 1 · foundations →')}</span>
+    </button>
+
+    <button class="lens" onclick={() => open('ch1')}>
+      <div class="lens-head">
+        <span class="lens-no">02</span>
+        <div>
           <h2 class="display">FIFO</h2>
-          <span class="lens-en">{t('第 1 章 · 同步 FIFO', 'Chapter 1 · synchronous FIFO')}</span>
+          <span class="lens-en">{t('第 2 章 · 同步 FIFO', 'Chapter 2 · synchronous FIFO')}</span>
         </div>
       </div>
 
@@ -98,15 +146,15 @@
           'First make “never lose a word, never read empty” a checkable contract, then split full/empty detection, readout latency and depth sizing into one experiment each. All four are computed live: fill it, drain it, read and write in the same cycle, wrap the pointers, and watch count move.'
         )}
       </p>
-      <span class="lens-go">{t('第 1 章 · FIFO →', 'Chapter 1 · FIFO →')}</span>
+      <span class="lens-go">{t('第 2 章 · FIFO →', 'Chapter 2 · FIFO →')}</span>
     </button>
 
     <button class="lens" onclick={() => open('ch2')}>
       <div class="lens-head">
-        <span class="lens-no">02</span>
+        <span class="lens-no">03</span>
         <div>
           <h2 class="display">Async</h2>
-          <span class="lens-en">{t('第 2 章 · 异步 FIFO', 'Chapter 2 · asynchronous FIFO')}</span>
+          <span class="lens-en">{t('第 3 章 · 异步 FIFO', 'Chapter 3 · asynchronous FIFO')}</span>
         </div>
       </div>
 
@@ -153,7 +201,7 @@
           'Two clocks, one Gray pointer and a two-flop synchroniser. Per-bit delay turns a binary capture into a gamble; Gray keeps the sampled pointer old-or-new, while full/empty must settle for a stale copy of the other side.'
         )}
       </p>
-      <span class="lens-go">{t('第 2 章 · 异步 FIFO →', 'Chapter 2 · asynchronous FIFO →')}</span>
+      <span class="lens-go">{t('第 3 章 · 异步 FIFO →', 'Chapter 3 · asynchronous FIFO →')}</span>
     </button>
   </section>
 
@@ -208,8 +256,8 @@
   <footer class="colophon">
     <p>
       {t(
-        '本书是本站原创讲义，不依据特定出版物；大纲按“状态、时序、面积”三笔账组织。第 1 章同步 FIFO 与第 2 章异步 FIFO 已上线；跨时钟域与后续章节在计划中。',
-        'This is an original course sequence, not tied to a particular publication; the outline follows three bills: state, timing and area. Chapter 1 (synchronous FIFO) and Chapter 2 (asynchronous FIFO) are live; clock-domain crossing and the rest are planned.'
+        '本书是本站原创讲义，不依据特定出版物；大纲按“状态、时序、面积”三笔账组织。第 1 章基础、第 2 章同步 FIFO 与第 3 章异步 FIFO 已上线；跨时钟域与后续章节在计划中。',
+        'This is an original course sequence, not tied to a particular publication; the outline follows three bills: state, timing and area. Chapter 1 (foundations), Chapter 2 (synchronous FIFO) and Chapter 3 (asynchronous FIFO) are live; clock-domain crossing and the rest are planned.'
       )}
     </p>
   </footer>
@@ -301,7 +349,7 @@
 
   .lenses {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 18px;
     margin-top: 56px;
   }
@@ -491,6 +539,61 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 7.5px;
     fill: var(--ink-3);
+  }
+
+
+  .basis .line {
+    stroke: var(--line);
+    stroke-width: 1.1;
+    fill: none;
+  }
+
+  .basis .box {
+    fill: var(--card-2);
+    stroke: #cfded9;
+  }
+
+  .basis .mini {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.5px;
+    fill: var(--muted);
+  }
+
+  .basis .cap {
+    font-family: 'Inter', sans-serif;
+    font-size: 8px;
+    fill: var(--muted);
+  }
+
+  .basis .pulse {
+    fill: none;
+    stroke: var(--ember);
+    stroke-width: 1.4;
+  }
+
+  .basis .dot-bad {
+    fill: var(--ember);
+  }
+
+  .basis .sig {
+    fill: none;
+    stroke: var(--ink-3);
+    stroke-width: 1.1;
+  }
+
+  .basis .sig.acc {
+    stroke: var(--accent);
+  }
+
+  .basis .sig.ember {
+    stroke: var(--ember);
+  }
+
+  .basis .qmark {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 18px;
+    font-style: italic;
+    fill: var(--gold);
   }
 
   .contents {
