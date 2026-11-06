@@ -3,6 +3,7 @@
   import Figure from '../../components/Figure.svelte';
   import Quiz from '../../components/Quiz.svelte';
   import GrayCrossLab from '../../components/logic/GrayCrossLab.svelte';
+  import SlowSamplingLab from '../../components/logic/SlowSamplingLab.svelte';
   import AsyncFifoLab from '../../components/logic/AsyncFifoLab.svelte';
   import { bitChanges, graySequence } from '../../lib/logic/async';
   import { lang, t } from '../../lib/lang.svelte';
@@ -27,8 +28,8 @@
       title="异步 FIFO"
       en="Asynchronous FIFO"
       lede={t(
-        '第 1 章的 FIFO 有一个隐含前提：读写共享同一个时钟沿。把这个前提拿掉之后，full/empty 不再能在同一拍算出来，指针也不能以二进制直接跨域。本章只处理新增出来的问题：格雷码、两级同步器、逐位到达时间，以及为什么异步 FIFO 的满空必然是保守的。',
-        'The FIFO in Chapter 1 quietly assumes one clock edge for both ports. Remove that assumption and full/empty can no longer be settled in the same cycle, and a binary pointer cannot cross the boundary directly. This chapter handles only the new problems: Gray code, two-flop synchronisers, per-bit arrival time, and why asynchronous full/empty must be conservative.'
+        '第 1 章的 FIFO 有一个隐含前提：读写共享同一个时钟沿。把这个前提拿掉之后，full/empty 不再能在同一拍算出来，指针也不能以二进制直接跨域。本章只处理新增出来的问题：格雷码、两级同步器、逐位到达时间、为什么异步 FIFO 的满空必然是保守的，以及慢时钟一次跨过多个源码为什么不违反一位变化。',
+        'The FIFO in Chapter 1 quietly assumes one clock edge for both ports. Remove that assumption and full/empty can no longer be settled in the same cycle, and a binary pointer cannot cross the boundary directly. This chapter handles only the new problems: Gray code, two-flop synchronisers, per-bit arrival time, why asynchronous full/empty must be conservative, and why a slow clock that skips several source codes does not break the one-bit rule.'
       )}
     />
 
@@ -331,6 +332,112 @@
     </div>
 
     <div class="prose">
+      <h3><span class="h-no">2.3.1</span>{t('慢采样跨过多个码字，为什么仍然成立', 'Why a slow sample may skip many codes')}</h3>
+      {#if en}
+        <p>
+          A common objection goes like this: if the slow clock sees two or three fast rising edges inside one of its
+          periods, the Gray pointer changes several times between two slow samples. Does that not violate the
+          one-bit-at-a-time rule?
+        </p>
+        <p>
+          Asynchronous crossing means the data and the destination clock have no fixed phase. A capture can land before
+          the change, after the change, or during it. The first two give the old or new value; the third is the only
+          dangerous case, and that is exactly the case Gray code narrows to one uncertain bit.
+        </p>
+        <p>
+          No, because the rule is about <b>consecutive values in the source domain</b>, not about two consecutive
+          samples in the destination domain. The slow domain is a decimator: it may sample 0, then 4, then 8 and never
+          see 1, 2 or 3. Those intermediate codes did exist at the source; they were simply not captured. At each
+          destination edge, only the transition currently in flight matters: either the bus is stable at some real
+          pointer, or one bit is changing and the synchronizer resolves it to the old or new pointer. The previous
+          destination sample can be many codes away; that does not make the current sample illegal.
+        </p>
+        <p>
+          A two-bit example makes the difference explicit. Let the source value go from <code>01</code> to
+          <code>10</code>. With binary, a capture may return <code>01</code> or <code>10</code> (the expected values),
+          but it can also return <code>00</code> or <code>11</code> when the two bits arrive at different times. Gray
+          encodes those same two source values as <code>01 → 11</code>; only one bit changes, so the capture can only
+          be <code>01</code> or <code>11</code>. The slow clock may have advanced several source steps before this
+          capture, but the value it eventually uses is a pointer the source really had.
+        </p>
+        <div class="note">
+          <b>{t('2 位例子：', '2-bit example: ')}</b>
+          {t(
+            '源值 01 → 10；二进制可能采到 01、10（预期）或 00、11（中间态）；格雷码 01 → 11，只能采到 01 或 11。',
+            'source 01 → 10; binary can capture 01 or 10 (expected) but also 00 or 11 (mixed); Gray 01 → 11 can only capture 01 or 11.'
+          )}
+        </div>
+        <p>
+          One nuance separates this from a licence to ignore timing: the captured value can be an <em>older</em>
+          pointer than the one currently on the bus, because the capture happened before the latest change or the
+          synchronizer is still resolving. That is staleness, not illegality. §2.4 uses staleness conservatively. What
+          must never happen is a value the source never had.
+        </p>
+      {:else}
+        <p>
+          一个常见的疑问是这样的：如果慢时钟在一个周期里看到两三个快时钟上升沿，那么两次慢采样之间格雷码已经变了好几次，
+          这不就违反了“一次只变一位”吗？
+        </p>
+        <p>
+          异步过渡的意思是数据和目的时钟没有确定相位关系，所以一次采样可能落在变化前、变化后，也可能落在变化过程中。
+          前两种给出旧值或新值，第三种才是危险情形；格雷码做的，正是把第三种压缩成一位不确定。
+        </p>
+        <p>
+          不违反，因为这条性质说的是<b>源端的相邻取值</b>，不是<b>目的端的相邻两次采样</b>。慢时钟域在做抽取：
+          它可能采到 0，然后 4，然后 8，从来没看见 1、2、3。那些中间码在源端确实出现过，只是没有被采样。
+          在每个目的沿上，真正重要的只有当时正在进行的那一次跳变：要么总线稳定在某个真实指针上，
+          要么只有一位在变、同步器把它解析成旧值或新值。上一次慢采样离这一次有多远，不影响这一次采样的合法性。
+        </p>
+        <p>
+          一个 2 位例子能把这个区别说清楚。源值从 <code>01</code> 变到 <code>10</code>。二进制可能采到
+          <code>01</code>、<code>10</code>（预期），也可能因为两位到达时间不同而采到 <code>00</code>、<code>11</code>。
+          格雷码把同样的两个源值编码成 <code>01 → 11</code>，只变一位，所以采样只能是 <code>01</code> 或 <code>11</code>。
+          慢时钟可能已经跨过好几个源端码字，但它最终用到的，是源端真实出现过的指针。
+        </p>
+        <div class="note">
+          <b>{t('2 位例子：', '2-bit example: ')}</b>
+          {t(
+            '源值 01 → 10；二进制可能采到 01、10（预期）或 00、11（中间态）；格雷码 01 → 11，只能采到 01 或 11。',
+            'source 01 → 10; binary can capture 01 or 10 (expected) but also 00 or 11 (mixed); Gray 01 → 11 can only capture 01 or 11.'
+          )}
+        </div>
+        <p>
+          有一个细节把它和“可以不管时序”区分开：采到的值可能比总线上当前的值<em>旧</em>，因为采样发生在最新变化之前，
+          或者同步器还在解析。这是过时，不是非法；§2.4 会保守地使用这份过时。绝不允许出现的，是源端从未有过的值。
+        </p>
+      {/if}
+    </div>
+
+    <Figure
+      no={t('图 2.4', 'Figure 2.4')}
+      caption={t(
+        '慢时钟每 N 个快拍采样一次。条纹显示源指针在两次采样之间扫过的码字；注意两次采样可以是 0、4、8，彼此并不相邻。Gray 每次采样仍是合法码，Binary 可能在跳变窗口采到中间值；周期、相位与偏斜都可调。',
+        'The slow clock samples once every N fast ticks. The strip shows the source pointer sweeping between samples; two samples can be 0, 4 and 8, nowhere near adjacent. Every Gray capture is still a legal code, while binary may hit a mid-transition value. Period, phase and skew are adjustable.'
+      )}
+    >
+      <SlowSamplingLab />
+    </Figure>
+
+    <div class="prose">
+      {#if en}
+        <p>
+          Watch the “skipped” column and the two captured pointers together. They may be 0, 4, 8; the skipped codes are
+          1–3, 5–7 and so on. The slow domain never sees those codes, but each captured value is one the source actually
+          held. The one-bit property is doing its job at every source transition, not promising that the slow samples
+          form a contiguous sequence. The default phase samples after the transition has settled, so even binary is
+          legal there; press “on transition” to put the capture edge inside the window and binary will produce mixed
+          values while Gray still returns only the old or new code.
+        </p>
+      {:else}
+        <p>
+          把“跳过”列和两个采样指针一起看：它们可能是 0、4、8，跳过的是 1–3、5–7 等等。慢域从没看见这些码，
+          但每次采到的都是源端真实持有过的值。一位变化性质在每一次源端跳变上起作用，并不承诺慢采样之间是连续码字。
+          默认采样在跳变稳定之后，所以二进制也合法；点“对齐跳变”把采样沿放进窗口，二进制会出现中间值，而格雷码仍只给出旧值或新值。
+        </p>
+      {/if}
+    </div>
+
+    <div class="prose">
       <h3><span class="h-no">2.4</span>{t('满与空：用一份过时的指针', 'Full and empty: a stale pointer is all you have')}</h3>
       {#if en}
         <p>
@@ -370,7 +477,7 @@
     </div>
 
     <Figure
-      no={t('图 2.4', 'Figure 2.4')}
+      no={t('图 2.5', 'Figure 2.5')}
       caption={t(
         '双时钟 FIFO 波形。切换写快/读快/同速，单步看 full、empty、两级同步器和实际占用。被拒的写或读来自保守标志，不是数据坏了。',
         'Dual-clock FIFO waveform. Switch write-fast/read-fast/equal and step through full, empty, the two synchroniser stages and actual occupancy. Rejected writes or reads come from conservative flags, not corrupt data.'
@@ -408,7 +515,7 @@
     </div>
 
     <Figure
-      no={t('图 2.5', 'Figure 2.5')}
+      no={t('图 2.6', 'Figure 2.6')}
       caption={t(
         '两侧的判定都只用本地指针和一份同步副本。保守方向不同，安全性相同：宁可少写/少读，不可越界。',
         'Both sides use only a local pointer and a synchronized copy. The conservative directions differ; the safety property is the same: rather stall than cross the boundary.'
@@ -569,6 +676,16 @@
             ],
             answer: 1,
             why: t('两个域都要回到已知的空状态；RAM 在写之前没有有效数据，不必复位。', 'Both domains must return to a known empty state; the RAM has no valid data before a write.')
+          },
+          {
+            q: t('慢时钟一个周期里快时钟变了好几次，格雷码还成立吗？', 'Does Gray code still hold if the fast clock changes several times inside one slow period?'),
+            options: [
+              t('不成立：两次慢采样之间变了多位', 'No: several bits change between two slow samples'),
+              t('成立：1 位变化约束的是源端相邻变化，慢域只是稀疏采样，不要求相邻采样值相邻', 'Yes: the one-bit rule is about consecutive source steps; the slow domain decimates and its samples need not be adjacent'),
+              t('只有慢时钟比快时钟快时才成立', 'Only when the slow clock is faster than the fast clock')
+            ],
+            answer: 1,
+            why: t('慢域可能采到 0、4、8；中间的 1、2、3 没被看到并不违反性质。每次采样仍必须是源端真实出现过的码字。', 'The slow domain may capture 0, 4, 8; missing 1, 2, 3 violates nothing. Each capture must still be a code the source actually held.')
           }
         ]}
       />

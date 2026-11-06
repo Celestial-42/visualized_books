@@ -31,9 +31,9 @@ export const LOGIC_CHAPTERS: Chapter[] = [
     status: 'ready',
     part: 'queue',
     blurb:
-      '两个时钟、一条格雷码指针、两级同步器：看多比特偏斜怎样制造非法指针，以及 full 与 empty 为什么只能保守。',
+      '两个时钟、一条格雷码指针、两级同步器：看多比特偏斜怎样制造非法指针，慢采样跳过多个码字为什么不违反一位变化，以及 full 与 empty 为什么只能保守。',
     blurbEn:
-      'Two clocks, one Gray pointer and a two-flop synchroniser: watch multi-bit skew create illegal pointers, and why full/empty can only be conservative.'
+      'Two clocks, one Gray pointer and a two-flop synchroniser: watch multi-bit skew create illegal pointers, why a slow sample may skip many codes, and why full/empty can only be conservative.'
   },
   {
     n: 3,
