@@ -41,8 +41,6 @@
   const metaCount = $derived(rows.filter((r) => r.meta).length);
   const resolvedCount = $derived(rows.filter((r) => r.resolved).length);
   const ratio = $derived(1 / srcPeriod);
-  const nearInteger = (value: number) => Math.abs(value - Math.round(value)) < 0.006;
-  const synchronous = $derived(nearInteger(ratio) || nearInteger(1 / ratio));
 
   const stop = () => {
     playing = false;
@@ -128,20 +126,11 @@
     </div>
 
     <div class="relation">
-      <span class="rel-badge" class:sync={synchronous} class:async={!synchronous}>
-        {synchronous ? t('同步', 'sync') : t('异步', 'async')}
-      </span>
       <span>{t('周期比', 'period ratio')} <b class="mono">T_src / T_dest = {srcPeriod.toFixed(2)}</b></span>
       <span>{t('频率比', 'frequency ratio')} <b class="mono">f_src / f_dest = {ratio.toFixed(2)}</b></span>
       <span>{t('相位偏移', 'phase offset')} <b class="mono">{phase.toFixed(2)} T_dest</b></span>
     </div>
 
-    <p class="relation-note">
-      {t(
-        '同步/异步按周期比判断：0.5、1、2 这类整数倍或整数分频显示为同步，其余显示为异步。相位偏移是另一维，仍然会影响采样是否撞上 D 的翻转。',
-        'Sync/async is classified by the period ratio: 0.5, 1 and 2 are integer multiples or integer divisions and show as sync; other ratios show as async. Phase offset is a separate dimension and still decides whether a capture hits D’s toggle.'
-      )}
-    </p>
 
     <span class="scroll-hint">{t('时钟波形可横向滑动', 'scroll the clock waveform sideways')}</span>
     <div class="clock-wrap">
@@ -218,8 +207,8 @@
 
     <p class="note">
       {t(
-        '把 Src 周期从 0.5 拖到 1.8、相位从 0 拖到 1：有时两个沿完全错开，有时正好在 D 的翻转窗口里相遇，有时 Src 比 Dest 快得多，两次 Dest 采样之间 D 已经翻了很多次。无论哪种情况，Q1 都可能出现“?”，而 Q2 始终只有 0/1；单比特可以这样同步，多比特不行（第 3 章）。',
-        'Drag the Src period from 0.5 to 1.8 and the phase from 0 to 1: sometimes the edges miss each other, sometimes a Dest edge lands inside D’s transition, sometimes Src is much faster and D flips many times between two Dest samples. In every case Q1 may show “?”, while Q2 only shows 0/1. A single bit can be synchronised this way; multiple bits cannot (Chapter 3).'
+        '把 Src 周期从 0.5 拖到 2.0、相位从 0 拖到 1：有时两个沿完全错开，有时正好在 D 的翻转窗口里相遇，有时 Src 比 Dest 快得多，两次 Dest 采样之间 D 已经翻了很多次。无论哪种情况，Q1 都可能出现“?”，而 Q2 始终只有 0/1；单比特可以这样同步，多比特不行（第 3 章）。',
+        'Drag the Src period from 0.5 to 2.0 and the phase from 0 to 1: sometimes the edges miss each other, sometimes a Dest edge lands inside D’s transition, sometimes Src is much faster and D flips many times between two Dest samples. In every case Q1 may show “?”, while Q2 only shows 0/1. A single bit can be synchronised this way; multiple bits cannot (Chapter 3).'
       )}
     </p>
   </div>
@@ -340,32 +329,6 @@
 
   .relation b {
     color: var(--accent-deep);
-  }
-
-  .rel-badge {
-    padding: 1px 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8.5px;
-    letter-spacing: 0.04em;
-    border-radius: 4px;
-  }
-
-  .rel-badge.sync {
-    color: #3f6b4f;
-    background: #eaf1ea;
-    border: 1px solid #d7e5d8;
-  }
-
-  .rel-badge.async {
-    color: var(--ember);
-    background: var(--ember-soft);
-    border: 1px solid #eed8ce;
-  }
-
-  .relation-note {
-    font-size: 8.5px;
-    line-height: 1.55;
-    color: var(--muted);
   }
 
   .scroll-hint {
