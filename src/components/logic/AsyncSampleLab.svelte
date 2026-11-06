@@ -6,6 +6,7 @@
   const APERTURE = 0.06;
 
   let srcPeriod = $state(0.75);
+  const PERIOD_PRESETS = [0.5, 1, 2];
   let phase = $state(0.03);
   let playing = $state(false);
   let timer: ReturnType<typeof setInterval> | null = null;
@@ -40,6 +41,8 @@
   const metaCount = $derived(rows.filter((r) => r.meta).length);
   const resolvedCount = $derived(rows.filter((r) => r.resolved).length);
   const ratio = $derived(1 / srcPeriod);
+  const nearInteger = (value: number) => Math.abs(value - Math.round(value)) < 0.006;
+  const synchronous = $derived(nearInteger(ratio) || nearInteger(1 / ratio));
 
   const stop = () => {
     playing = false;
@@ -105,8 +108,15 @@
     <div class="controls">
       <div class="ctl">
         <span class="lbl">{t('Src 周期', 'Src period')}</span>
-        <input type="range" min="0.5" max="1.8" step="0.01" value={srcPeriod} oninput={(e) => (srcPeriod = Number(e.currentTarget.value))} />
+        <input type="range" min="0.5" max="2" step="0.01" value={srcPeriod} oninput={(e) => (srcPeriod = Number(e.currentTarget.value))} />
         <b class="mono">{srcPeriod.toFixed(2)}</b>
+      </div>
+      <div class="presets">
+        {#each PERIOD_PRESETS as p}
+          <button class="preset" class:on={Math.abs(srcPeriod - p) < 0.006} onclick={() => (srcPeriod = p)}>
+            {p.toFixed(1)}
+          </button>
+        {/each}
       </div>
       <div class="ctl">
         <span class="lbl">{t('Src 相位', 'Src phase')}</span>
@@ -118,10 +128,20 @@
     </div>
 
     <div class="relation">
+      <span class="rel-badge" class:sync={synchronous} class:async={!synchronous}>
+        {synchronous ? t('同步', 'sync') : t('异步', 'async')}
+      </span>
       <span>{t('周期比', 'period ratio')} <b class="mono">T_src / T_dest = {srcPeriod.toFixed(2)}</b></span>
       <span>{t('频率比', 'frequency ratio')} <b class="mono">f_src / f_dest = {ratio.toFixed(2)}</b></span>
       <span>{t('相位偏移', 'phase offset')} <b class="mono">{phase.toFixed(2)} T_dest</b></span>
     </div>
+
+    <p class="relation-note">
+      {t(
+        '同步/异步按周期比判断：0.5、1、2 这类整数倍或整数分频显示为同步，其余显示为异步。相位偏移是另一维，仍然会影响采样是否撞上 D 的翻转。',
+        'Sync/async is classified by the period ratio: 0.5, 1 and 2 are integer multiples or integer divisions and show as sync; other ratios show as async. Phase offset is a separate dimension and still decides whether a capture hits D’s toggle.'
+      )}
+    </p>
 
     <span class="scroll-hint">{t('时钟波形可横向滑动', 'scroll the clock waveform sideways')}</span>
     <div class="clock-wrap">
@@ -289,6 +309,27 @@
     text-align: right;
   }
 
+  .presets {
+    display: flex;
+    gap: 4px;
+  }
+
+  .preset {
+    padding: 3px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+  }
+
+  .preset.on {
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    border-color: #cfded9;
+  }
+
   .relation {
     display: flex;
     flex-wrap: wrap;
@@ -299,6 +340,32 @@
 
   .relation b {
     color: var(--accent-deep);
+  }
+
+  .rel-badge {
+    padding: 1px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    border-radius: 4px;
+  }
+
+  .rel-badge.sync {
+    color: #3f6b4f;
+    background: #eaf1ea;
+    border: 1px solid #d7e5d8;
+  }
+
+  .rel-badge.async {
+    color: var(--ember);
+    background: var(--ember-soft);
+    border: 1px solid #eed8ce;
+  }
+
+  .relation-note {
+    font-size: 8.5px;
+    line-height: 1.55;
+    color: var(--muted);
   }
 
   .scroll-hint {

@@ -231,8 +231,8 @@
     <Figure
       no={t('图 1.3', 'Figure 1.3')}
       caption={t(
-        '单比特异步采样实验。上方同时画出 Src clk 与 Dest clk；拖动 Src/Dest 周期比与相位偏移，D 在 Src 上升沿翻转。D 的翻转落进 Dest 沿的采样窗口时，第一级 Q1 出现“?”；第二级 Q2 始终是干净的 0/1，但晚一拍。',
-        'A single-bit asynchronous capture experiment. Both Src clk and Dest clk are drawn; the sliders set their period ratio and phase offset, and D toggles on Src rising edges. When a Src edge lands inside a Dest aperture, Q1 shows “?”; Q2 remains a clean 0/1, one cycle later.'
+        '单比特异步采样实验。上方同时画出 Src clk 与 Dest clk；周期比覆盖 0.5–2.0，0.5、1、2 会自动标为同步，其余标为异步；相位偏移单独可调。D 在 Src 上升沿翻转，落进 Dest 沿的采样窗口时，第一级 Q1 出现“?”；第二级 Q2 始终是干净的 0/1，但晚一拍。',
+        'A single-bit asynchronous capture experiment. Both Src clk and Dest clk are drawn; the period ratio covers 0.5–2.0, with 0.5, 1 and 2 automatically labelled sync and other ratios async; phase offset is separate. D toggles on Src rising edges. When a Src edge lands inside a Dest aperture, Q1 shows “?”; Q2 remains a clean 0/1, one cycle later.'
       )}
     >
       <AsyncSampleLab />
