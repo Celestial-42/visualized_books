@@ -186,6 +186,12 @@
           synchroniser only reduces its probability.
         </p>
         <p>
+          The lab draws both clocks explicitly: <b>Src clk</b> drives D and <b>Dest clk</b> samples it. Two sliders set
+          Src’s period as a fraction of Dest’s period and the phase offset between them. Neither has a guaranteed value
+          in a real crossing: a ratio of 0.75 can drift, and a phase that misses the edge today can hit it tomorrow.
+          Try a ratio and phase where the edges miss, then sweep until one lands in the aperture.
+        </p>
+        <p>
           The standard single-bit answer is two flops in series. The first flop may go metastable; the second flop
           samples the first one a cycle later, giving the metastability time to resolve to a clean 0 or 1. The second
           stage does not remove the latency — it adds one cycle — and the resolved value can be the old or the new one.
@@ -193,8 +199,8 @@
           can resolve independently into a combination that never existed.
         </p>
         <p>
-          The lab sweeps the phase of an asynchronous toggle across the destination edges. When a toggle lands inside
-          the aperture, Q1 shows “?”; Q2 stays 0 or 1 and is one cycle later. That “?” is the whole reason for the
+          The lab keeps both clocks visible. Sweep the phase or change the Src/Dest period ratio: when a Src edge
+          lands inside a Dest edge’s aperture, Q1 shows “?”; Q2 stays 0 or 1 and is one cycle later. That “?” is the whole reason for the
           synchroniser, and the reason multi-bit crossings need Gray code or a handshake rather than N independent
           two-flop chains.
         </p>
@@ -205,12 +211,18 @@
           不同的下游门还可能把它解析成不同的值。再好的意愿也消不掉这个可能性；同步器只能降低概率。
         </p>
         <p>
+          实验把两个时钟都画出来：<b>Src clk</b> 驱动 D，<b>Dest clk</b> 采样。两个滑杆分别设 Src 周期相对 Dest 周期的比例，
+          以及两者之间的相位偏移。真实跨域里这两个量都没有保证：0.75 的比例会漂，今天错过沿的相位明天可能正好撞上。
+          先找一个两者错开的比例/相位，再扫描到某个沿落进采样窗口。
+        </p>
+        <p>
           单比特的标准答案是两级触发器串联。第一级可能进入亚稳态；第二级在下一拍再采一次，给亚稳态时间解析成干净的 0 或 1。
           第二级没有消除延迟——它增加一拍——而且解析结果可能是旧值或新值。对单个控制位，这可以接受；
           对多比特总线不行：不同位可能各自解析，组合出一个从未存在过的值。
         </p>
         <p>
-          实验把一个异步翻转的相位扫过目的沿。翻转落进采样窗口时，Q1 显示“?”；Q2 仍然是 0/1，并且晚一拍。
+          实验把两个时钟都留在视野里。扫描相位，或者改变 Src/Dest 的周期比：当 Src 的一个沿落进 Dest 沿的采样窗口时，
+          Q1 显示“?”；Q2 仍然是 0/1，并且晚一拍。
           这个“?”就是同步器存在的理由，也是多比特跨域必须用格雷码或握手、而不能简单并排 N 条两级链的原因。
         </p>
       {/if}
@@ -219,8 +231,8 @@
     <Figure
       no={t('图 1.3', 'Figure 1.3')}
       caption={t(
-        '单比特异步采样实验。拖动相位或点“扫描相位”：D 的翻转落进目的沿的采样窗口时，第一级 Q1 会出现“?”；第二级 Q2 始终是干净的 0/1，但晚一拍。',
-        'A single-bit asynchronous capture experiment. Drag the phase or sweep it: when D toggles inside the destination aperture, stage Q1 shows “?”; Q2 remains a clean 0/1, one cycle later.'
+        '单比特异步采样实验。上方同时画出 Src clk 与 Dest clk；拖动 Src/Dest 周期比与相位偏移，D 在 Src 上升沿翻转。D 的翻转落进 Dest 沿的采样窗口时，第一级 Q1 出现“?”；第二级 Q2 始终是干净的 0/1，但晚一拍。',
+        'A single-bit asynchronous capture experiment. Both Src clk and Dest clk are drawn; the sliders set their period ratio and phase offset, and D toggles on Src rising edges. When a Src edge lands inside a Dest aperture, Q1 shows “?”; Q2 remains a clean 0/1, one cycle later.'
       )}
     >
       <AsyncSampleLab />
@@ -340,6 +352,16 @@
             ],
             answer: 1,
             why: t('单比特安全不等于整体安全；多比特需要格雷码、握手或双时钟存储。', 'Per-bit safety is not word-level safety; multi-bit crossings need Gray code, a handshake or dual-clock memory.')
+          },
+          {
+            q: t('Src 与 Dest 标称同频、相位恰好对齐时，异步采样会变安全吗？', 'If Src and Dest have the same nominal frequency and happen to be phase-aligned, is the async capture safe?'),
+            options: [
+              t('会，同频就没有亚稳态', 'Yes — equal frequency removes metastability'),
+              t('不会，每个 Dest 沿都可能正好撞在 D 的翻转上', 'No — every Dest edge can land exactly on D’s toggle'),
+              t('只有 Src 更快时才不安全', 'Only when Src is faster')
+            ],
+            answer: 1,
+            why: t('同频同相只是让每次采样都落在跳变窗口里；相位会漂，频率也有公差，异步不能靠“碰巧对齐”。', 'Same frequency and phase just make every capture land in the transition window; phase drifts and frequency has tolerance, so a crossing cannot rely on accidental alignment.')
           }
         ]}
       />

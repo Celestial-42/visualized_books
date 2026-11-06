@@ -2,26 +2,35 @@
   import { onDestroy } from 'svelte';
   import { t } from '../../lib/lang.svelte';
 
-  const EDGES = [0, 2, 4, 6, 8, 10];
-  const BASE_TOGGLES = [0.6, 2.5, 4.1, 6.3, 8.6];
-  const APERTURE = 0.08;
+  const DEST_EDGES = [0, 1, 2, 3, 4, 5, 6, 7];
+  const APERTURE = 0.06;
 
-  let phase = $state(-0.35);
+  let srcPeriod = $state(0.75);
+  let phase = $state(0.03);
   let playing = $state(false);
   let timer: ReturnType<typeof setInterval> | null = null;
 
-  const toggles = $derived(BASE_TOGGLES.map((x) => x + phase));
-  const sourceAt = (time: number) => toggles.filter((x) => x <= time).length % 2;
+  const sourceEdges = $derived.by(() => {
+    const edges: number[] = [];
+    for (let k = -20; k <= 30; k += 1) {
+      const x = phase + k * srcPeriod;
+      if (x >= -2 && x <= 8.2) edges.push(Number(x.toFixed(3)));
+    }
+    return edges;
+  });
+
+  const dataAt = (time: number) => sourceEdges.filter((edge) => edge >= 0 && edge <= time).length % 2;
+  const metaAt = (time: number) => sourceEdges.some((edge) => Math.abs(edge - time) <= APERTURE);
 
   const rows = $derived.by(() => {
     const out: { edge: number; d: number; meta: boolean; q1: string; q2: number; resolved: boolean }[] = [];
     let prevQ1 = '0';
-    for (const edge of EDGES) {
-      const d = sourceAt(edge);
-      const meta = toggles.some((x) => Math.abs(x - edge) <= APERTURE);
+    for (const edge of DEST_EDGES) {
+      const d = dataAt(edge);
+      const meta = metaAt(edge);
       const q1 = meta ? '?' : String(d);
       const resolved = prevQ1 === '?';
-      const q2 = prevQ1 === '?' ? sourceAt(edge - 2) : Number(prevQ1);
+      const q2 = prevQ1 === '?' ? dataAt(edge - 1) : Number(prevQ1);
       out.push({ edge, d, meta, q1, q2, resolved });
       prevQ1 = q1;
     }
@@ -30,6 +39,7 @@
 
   const metaCount = $derived(rows.filter((r) => r.meta).length);
   const resolvedCount = $derived(rows.filter((r) => r.resolved).length);
+  const ratio = $derived(1 / srcPeriod);
 
   const stop = () => {
     playing = false;
@@ -46,12 +56,37 @@
     }
     playing = true;
     timer = setInterval(() => {
-      phase = phase >= 0.4 ? -0.4 : Number((phase + 0.01).toFixed(2));
-    }, 60);
+      phase = Number(((phase + 0.005) % 1).toFixed(3));
+    }, 45);
   };
 
   onDestroy(stop);
 
+  const W = 720;
+  const H = 168;
+  const L = 54;
+  const R = 16;
+  const T = 18;
+
+  const xOf = (t: number) => L + (t / 8) * (W - L - R);
+
+  const clockPoints = (period: number, offset: number, y: number) => {
+    const pts: string[] = [];
+    for (let t = 0; t <= 8.0001; t += 0.01) {
+      const local = ((t - offset) % period + period) % period;
+      const high = local < period / 2;
+      pts.push(`${xOf(t).toFixed(1)},${(y - (high ? 11 : 0)).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  };
+
+  const dataPoints = () => {
+    const pts: string[] = [];
+    for (let t = 0; t <= 8.0001; t += 0.01) {
+      pts.push(`${xOf(t).toFixed(1)},${(138 - dataAt(t) * 11).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  };
 </script>
 
 <div class="lab">
@@ -59,7 +94,7 @@
     <div class="top">
       <div>
         <span class="eyebrow">{t('异步输入 + 两级同步', 'async input + two-flop sync')}</span>
-        <b>{t('D 的翻转位置与目的时钟没有固定关系', 'D toggles with no fixed phase to the destination clock')}</b>
+        <b>{t('Src 与 Dest 没有固定的频率/相位关系', 'Src and Dest have no fixed frequency or phase relation')}</b>
       </div>
       <div class="stats">
         <span>{t('亚稳态采样', 'metastable captures')} <b class="mono bad">{metaCount}</b></span>
@@ -69,23 +104,54 @@
 
     <div class="controls">
       <div class="ctl">
-        <span class="lbl">{t('D 翻转相对采样沿', 'D toggle relative to edge')}</span>
-        <input type="range" min="-0.4" max="0.4" step="0.01" value={phase} oninput={(e) => { stop(); phase = Number(e.currentTarget.value); }} />
-        <b class="mono">{phase >= 0 ? '+' : ''}{phase.toFixed(2)}</b>
+        <span class="lbl">{t('Src 周期', 'Src period')}</span>
+        <input type="range" min="0.5" max="1.8" step="0.01" value={srcPeriod} oninput={(e) => (srcPeriod = Number(e.currentTarget.value))} />
+        <b class="mono">{srcPeriod.toFixed(2)}</b>
+      </div>
+      <div class="ctl">
+        <span class="lbl">{t('Src 相位', 'Src phase')}</span>
+        <input type="range" min="0" max="1" step="0.005" value={phase} oninput={(e) => { stop(); phase = Number(e.currentTarget.value); }} />
+        <b class="mono">{phase.toFixed(2)}</b>
       </div>
       <button class="btn small primary" onclick={play}>{playing ? t('暂停', 'pause') : t('扫描相位', 'sweep phase')}</button>
-      <button class="btn small" onclick={() => { stop(); phase = 0; }}>{t('回到 0', 'zero')}</button>
+      <button class="btn small" onclick={() => { stop(); srcPeriod = 0.75; phase = 0.03; }}>{t('复位', 'reset')}</button>
     </div>
 
-    <div class="legend">
-      <span>{t('D 翻转时刻', 'D toggles at')} <b class="mono">[{toggles.map((x) => x.toFixed(1)).join(', ')}]</b></span>
-      <span>{t('采样窗口 ±0.08', 'aperture ±0.08')}</span>
+    <div class="relation">
+      <span>{t('周期比', 'period ratio')} <b class="mono">T_src / T_dest = {srcPeriod.toFixed(2)}</b></span>
+      <span>{t('频率比', 'frequency ratio')} <b class="mono">f_src / f_dest = {ratio.toFixed(2)}</b></span>
+      <span>{t('相位偏移', 'phase offset')} <b class="mono">{phase.toFixed(2)} T_dest</b></span>
+    </div>
+
+    <span class="scroll-hint">{t('时钟波形可横向滑动', 'scroll the clock waveform sideways')}</span>
+    <div class="clock-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('Src 与 Dest 时钟波形', 'Src and Dest clock waveforms')}>
+        {#each DEST_EDGES as edge}
+          <line x1={xOf(edge)} y1="30" x2={xOf(edge)} y2="150" class="sample-line" />
+          {#if metaAt(edge)}
+            <rect x={xOf(edge - APERTURE)} y="32" width={xOf(edge + APERTURE) - xOf(edge - APERTURE)} height="116" class="aperture" />
+          {/if}
+        {/each}
+        {#each [0, 2, 4, 6, 8] as tick}
+          <text x={xOf(tick)} y="162" class="tick" text-anchor="middle">{tick}</text>
+        {/each}
+
+        <text x="10" y="50" class="rl">Src clk</text>
+        <text x="10" y="89" class="rl">Dest clk</text>
+        <text x="10" y="138" class="rl">D</text>
+        <line x1={L} y1="44" x2={W - R} y2="44" class="base" />
+        <line x1={L} y1="83" x2={W - R} y2="83" class="base" />
+        <line x1={L} y1="138" x2={W - R} y2="138" class="base" />
+        <polyline points={clockPoints(srcPeriod, phase, 44)} class="sig src" />
+        <polyline points={clockPoints(1, 0, 83)} class="sig dest" />
+        <polyline points={dataPoints()} class="sig data" />
+      </svg>
     </div>
 
     <div class="timeline-wrap">
       <div class="timeline">
         <div class="row head">
-          <span class="rl">{t('目的沿', 'edge')}</span>
+          <span class="rl">{t('Dest 沿', 'Dest edge')}</span>
           {#each rows as r}<span class="cell t mono">t{r.edge}</span>{/each}
         </div>
         <div class="row">
@@ -93,10 +159,6 @@
           {#each rows as r}
             <span class="cell bit" class:hi={r.d === 1} class:meta={r.meta}>{r.d}</span>
           {/each}
-        </div>
-        <div class="row">
-          <span class="rl">clk ↑</span>
-          {#each rows as _}<span class="cell clk">↑</span>{/each}
         </div>
         <div class="row">
           <span class="rl">Q1</span>
@@ -115,20 +177,20 @@
 
     <div class="notes">
       <div class="note-box">
-        <span class="lbl">{t('Q1（第一级）', 'Q1 (stage 1)')}</span>
+        <span class="lbl">Src clk → D</span>
         <p>
           {t(
-            '采样沿若落在 D 的翻转窗口里，第一级可能进入亚稳态，显示为“?”。它是一个不确定的 0/1，不是一个稳定的数据位。',
-            'If a capture edge lands inside D’s transition window, the first stage can go metastable and is shown as “?”. It is an uncertain 0/1, not a stable data bit.'
+            '源时钟每来一个上升沿，D 翻转一次。Src 与 Dest 的频率比、相位偏移都可以调；异步的含义正是这两个量都没有保证。',
+            'D toggles on every Src rising edge. The frequency ratio and phase offset are both adjustable; asynchronous means neither is guaranteed.'
           )}
         </p>
       </div>
       <div class="note-box">
-        <span class="lbl">{t('Q2（第二级）', 'Q2 (stage 2)')}</span>
+        <span class="lbl">Dest clk → Q1 / Q2</span>
         <p>
           {t(
-            '第二级在下一个沿再采一次，把“?”解析成一个 0 或 1；下游永远看不到“?”。代价是晚一拍，而且解析结果可能是旧值或新值。',
-            'The second stage samples again on the next edge and resolves the “?” to a clean 0 or 1; downstream never sees “?”. The cost is one cycle, and the resolved value may be old or new.'
+            '目的时钟采样时若撞上 D 的翻转窗口，Q1 变成“?”；Q2 在下一个 Dest 沿把它解析成干净的 0/1，代价是晚一拍。',
+            'If a Dest edge lands in D’s transition window, Q1 becomes “?”; Q2 resolves it to a clean 0/1 on the next Dest edge, at the cost of one cycle.'
           )}
         </p>
       </div>
@@ -136,8 +198,8 @@
 
     <p class="note">
       {t(
-        '把相位从 −0.4 扫到 +0.4：当翻转落在目的沿附近时，Q1 出现“?”；Q2 仍然只有 0/1，并且比 Q1 晚一拍。两级同步器降低的是亚稳态传播到下游的概率，不是把它变成“没有延迟”。单比特可以这样同步；多比特不能用同一招，原因见第 3 章。',
-        'Sweep the phase from −0.4 to +0.4: when a toggle lands near a destination edge, Q1 shows “?”; Q2 still only shows 0/1 and is one cycle later. A two-flop synchroniser lowers the chance of metastability reaching downstream; it does not make it latency-free. A single bit can be synchronised this way; multiple bits cannot, as Chapter 3 explains.'
+        '把 Src 周期从 0.5 拖到 1.8、相位从 0 拖到 1：有时两个沿完全错开，有时正好在 D 的翻转窗口里相遇，有时 Src 比 Dest 快得多，两次 Dest 采样之间 D 已经翻了很多次。无论哪种情况，Q1 都可能出现“?”，而 Q2 始终只有 0/1；单比特可以这样同步，多比特不行（第 3 章）。',
+        'Drag the Src period from 0.5 to 1.8 and the phase from 0 to 1: sometimes the edges miss each other, sometimes a Dest edge lands inside D’s transition, sometimes Src is much faster and D flips many times between two Dest samples. In every case Q1 may show “?”, while Q2 only shows 0/1. A single bit can be synchronised this way; multiple bits cannot (Chapter 3).'
       )}
     </p>
   </div>
@@ -188,20 +250,24 @@
 
   .controls {
     display: flex;
-    align-items: center;
+    align-items: end;
     gap: 7px;
     flex-wrap: wrap;
   }
 
   .ctl {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'label label'
+      'range value';
     align-items: center;
-    gap: 6px;
-    min-width: 220px;
+    gap: 2px 6px;
+    min-width: 190px;
   }
 
-  .lbl {
-    flex: none;
+  .ctl .lbl {
+    grid-area: label;
     font-size: 8.5px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -209,16 +275,21 @@
   }
 
   .ctl input {
-    flex: 1;
+    grid-area: range;
+    width: 100%;
+    min-width: 65px;
     accent-color: var(--accent);
   }
 
   .ctl b {
+    grid-area: value;
+    min-width: 28px;
     font-size: 9px;
     color: var(--accent-deep);
+    text-align: right;
   }
 
-  .legend {
+  .relation {
     display: flex;
     flex-wrap: wrap;
     gap: 4px 12px;
@@ -226,8 +297,71 @@
     color: var(--muted);
   }
 
-  .legend b {
+  .relation b {
     color: var(--accent-deep);
+  }
+
+  .scroll-hint {
+    display: none;
+    font-size: 8.5px;
+    color: var(--muted);
+  }
+
+  .clock-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .clock-wrap svg {
+    display: block;
+    width: 100%;
+    min-width: 560px;
+    height: auto;
+  }
+
+  .rl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    fill: var(--muted);
+  }
+
+  .base {
+    stroke: var(--line-2);
+    stroke-width: 0.8;
+  }
+
+  .sig {
+    fill: none;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+  }
+
+  .sig.src {
+    stroke: var(--accent);
+  }
+
+  .sig.dest {
+    stroke: var(--gold);
+  }
+
+  .sig.data {
+    stroke: var(--ink-2);
+  }
+
+  .sample-line {
+    stroke: var(--gold);
+    stroke-width: 0.8;
+    stroke-dasharray: 2 2;
+  }
+
+  .aperture {
+    fill: rgba(180, 84, 58, 0.13);
+  }
+
+  .tick {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7px;
+    fill: var(--muted);
   }
 
   .timeline-wrap {
@@ -239,27 +373,25 @@
     display: flex;
     flex-direction: column;
     gap: 3px;
-    min-width: 520px;
+    min-width: 620px;
   }
 
   .row {
     display: grid;
-    grid-template-columns: 62px repeat(6, minmax(54px, 1fr));
-    gap: 4px;
+    grid-template-columns: 62px repeat(8, minmax(54px, 1fr));
+    gap: 3px;
     align-items: center;
   }
 
   .rl {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8px;
     text-align: right;
-    color: var(--muted);
+    padding-right: 2px;
   }
 
   .cell {
     display: grid;
     place-items: center;
-    height: 24px;
+    height: 23px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     color: var(--muted);
@@ -290,12 +422,6 @@
     background: var(--ember-soft);
     border-color: #eed8ce;
     font-weight: 600;
-  }
-
-  .cell.clk {
-    color: var(--accent);
-    background: var(--card);
-    border-color: var(--line-2);
   }
 
   .cell.q {
@@ -342,6 +468,14 @@
   }
 
   @media (max-width: 700px) {
+    .scroll-hint {
+      display: block;
+    }
+
+    .controls {
+      align-items: stretch;
+    }
+
     .ctl {
       min-width: 100%;
     }
@@ -355,7 +489,7 @@
     }
 
     .row {
-      grid-template-columns: 48px repeat(6, minmax(34px, 1fr));
+      grid-template-columns: 42px repeat(8, minmax(24px, 1fr));
       gap: 2px;
     }
 
