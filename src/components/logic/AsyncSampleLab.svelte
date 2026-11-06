@@ -207,8 +207,8 @@
 
     <p class="note">
       {t(
-        '把 Src 周期从 0.5 拖到 2.0、相位从 0 拖到 1：有时两个沿完全错开，有时正好在 D 的翻转窗口里相遇，有时 Src 比 Dest 快得多，两次 Dest 采样之间 D 已经翻了很多次。无论哪种情况，Q1 都可能出现“?”，而 Q2 始终只有 0/1；单比特可以这样同步，多比特不行（第 3 章）。',
-        'Drag the Src period from 0.5 to 2.0 and the phase from 0 to 1: sometimes the edges miss each other, sometimes a Dest edge lands inside D’s transition, sometimes Src is much faster and D flips many times between two Dest samples. In every case Q1 may show “?”, while Q2 only shows 0/1. A single bit can be synchronised this way; multiple bits cannot (Chapter 3).'
+        '把 Src 周期从 0.5 拖到 2.0、相位从 0 拖到 1：有时两个沿完全错开，有时正好在 D 的翻转窗口里相遇，有时 Src 比 Dest 快得多，两次 Dest 采样之间 D 已经翻了很多次。无论哪种情况，Q1 都可能出现“?”，而 Q2 始终只有 0/1；单比特可以这样同步，多比特需要另一套机制。',
+        'Drag the Src period from 0.5 to 2.0 and the phase from 0 to 1: sometimes the edges miss each other, sometimes a Dest edge lands inside D’s transition, sometimes Src is much faster and D flips many times between two Dest samples. In every case Q1 may show “?”, while Q2 only shows 0/1. A single bit can be synchronised this way; multiple bits need a different mechanism.'
       )}
     </p>
   </div>

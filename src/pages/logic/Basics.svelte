@@ -6,10 +6,8 @@
   import SeqShiftLab from '../../components/logic/SeqShiftLab.svelte';
   import AsyncSampleLab from '../../components/logic/AsyncSampleLab.svelte';
   import { lang, t } from '../../lib/lang.svelte';
-  import { navigate } from '../../lib/router.svelte';
 
   const en = $derived(lang.value === 'en');
-  const open = (slug: string) => navigate(`/book/typical-logic/${slug}`);
 </script>
 
 <div class="page">
@@ -19,22 +17,22 @@
       title="基础知识"
       en="Foundations"
       lede={t(
-        '在进入 FIFO 之前，先把三个词对齐：组合逻辑的输出只由当前输入决定；时序逻辑把状态锁在时钟沿上；异步则连共同的时钟都没有。三者的区别不是术语，而是你能否用同一个沿来解释电路的行为。',
-        'Before the FIFO, align three words: combinational logic depends only on the current inputs; sequential logic stores state and updates it on a clock edge; asynchronous means there is no shared edge at all. The difference is not vocabulary — it is whether one edge can explain the behaviour.'
+        '先把三个词对齐：组合逻辑的输出只由当前输入决定；时序逻辑把状态锁在时钟沿上；异步则连共同的时钟都没有。三者的区别不是术语，而是你能否用同一个沿来解释电路的行为。',
+        'Start by aligning three words: combinational logic depends only on the current inputs; sequential logic stores state and updates it on a clock edge; asynchronous means there is no shared edge at all. The difference is not vocabulary — it is whether one edge can explain the behaviour.'
       )}
     />
 
     <div class="prose">
       {#if en}
         <p>
-          Every circuit in the rest of this book is built from these three ideas. A multiplexer is combinational; a
+          Every circuit you build uses these three ideas. A multiplexer is combinational; a
           register is sequential; a pointer crossing between two clocks is asynchronous. Mixing them up produces the
           classic bugs: treating a glitch as a value, assuming a register sees an input at the same instant it changes,
           or sampling a multi-bit bus that has no reason to be stable.
         </p>
         <p>
           The chapter gives each idea one experiment and one honest definition. It does not try to replace a digital
-          design course; it gives you the vocabulary and the failure modes that the FIFO chapters will spend later.
+          design course; it gives you the vocabulary and the failure modes of each idea.
         </p>
       {:else}
         <p>
@@ -43,7 +41,7 @@
           或者去采样一根根本没有理由稳定的多比特总线。
         </p>
         <p>
-          本章给每个概念一个实验和一个诚实的定义。它不替代数字设计课程，只提供后面 FIFO 章节要反复使用的词汇与失效模式。
+          本章给每个概念一个实验和一个诚实的定义。它不替代数字设计课程，只提供这三个概念各自的词汇与失效模式。
         </p>
       {/if}
     </div>
@@ -114,8 +112,8 @@
       {#if en}
         <p>
           A flip-flop adds memory. Its output is not a function of the current input alone; it is the value captured at
-          the last active clock edge. That one change is enough to build counters, state machines, pipelines and FIFO
-          pointers. The price is a timing contract: the input must be stable for a setup time before the edge and a
+          the last active clock edge. That one change is enough to build counters, state machines and pipelines. The
+          price is a timing contract: the input must be stable for a setup time before the edge and a
           hold time after it, and the output appears after a clock-to-Q delay.
         </p>
         <p>
@@ -133,7 +131,7 @@
       {:else}
         <p>
           触发器加入记忆。它的输出不再是当前输入的单纯函数，而是上一个有效时钟沿采到的值。就这一条变化，
-          足以构造计数器、状态机、流水线和 FIFO 指针。代价是一份时序契约：输入必须在沿之前稳定 setup 时间、沿之后保持 hold 时间，
+          足以构造计数器、状态机和流水线。代价是一份时序契约：输入必须在沿之前稳定 setup 时间、沿之后保持 hold 时间，
           输出要等 clock-to-Q 延迟才出现。
         </p>
         <p>
@@ -161,14 +159,14 @@
     <div class="prose">
       {#if en}
         <p>
-          The register also explains why a synchronous FIFO is possible: the pointers and flags are state, and state
-          moves on an edge. It also explains why a combinational glitch is usually harmless inside a clocked block:
+          The register is also what makes stateful protocols possible: counters and pointers are state, and state moves
+          on an edge. It also explains why a combinational glitch is usually harmless inside a clocked block:
           the flop samples after the cloud has settled. The glitch only becomes dangerous when it reaches something
           that has no edge — an asynchronous reset, a clock input, or a signal sampled by another clock.
         </p>
       {:else}
         <p>
-          寄存器也解释了同步 FIFO 为什么可能：指针和标志是状态，状态只在沿上移动。它也解释了组合毛刺在时钟块里通常无害：
+          寄存器也让有状态的协议成为可能：计数器和指针都是状态，状态只在沿上移动。它也解释了组合毛刺在时钟块里通常无害：
           触发器在组合云稳定之后才采样。毛刺真正危险，是当它到达一个没有沿的东西时——异步复位、时钟输入，
           或者被另一个时钟采样的信号。
         </p>
@@ -244,16 +242,16 @@
           Keep the three meanings separate. Combinational logic is “asynchronous” in the sense that it has no clock,
           but its delays can be analysed and its glitches avoided by sampling after settling. Sequential logic has an
           edge and a setup/hold contract. Clock-domain crossing is asynchronous because there is no edge relationship
-          at all; it needs synchronisers, handshakes, Gray pointers or dual-clock memory. The next two chapters use all
-          three: the FIFO stores words in registers and memory, samples nothing across a clock, and then the
-          asynchronous FIFO adds the crossing.
+          at all; it needs synchronisers, handshakes, Gray pointers or dual-clock memory. A real block may use all
+          three, but the questions stay separate: what is the current output, what is the captured state, and which
+          side of the crossing are we on?
         </p>
       {:else}
         <p>
           把三种含义分开。组合逻辑“异步”是指没有时钟，但它的延迟可以分析，毛刺可以通过等稳定后再采来避开。
           时序逻辑有一个沿和 setup/hold 契约。跨时钟域之所以异步，是因为两个沿之间根本没有关系；
-          它需要同步器、握手、格雷码指针或双时钟存储。接下来两章会把三者都用上：FIFO 用寄存器和存储保存字，
-          在单时钟里不需要跨域；异步 FIFO 再把跨域这一层加上去。
+          它需要同步器、握手、格雷码指针或双时钟存储。一个真实模块可能三者都用，但问题要保持分开：
+          当前输出是什么、沿上记住了什么、我们现在处在跨域的哪一侧。
         </p>
       {/if}
     </div>
@@ -367,21 +365,6 @@
       />
     </div>
 
-    <div class="next">
-      <span class="next-label">{t('接下来', 'Next')}</span>
-      <div class="next-grid">
-        <button class="next-card" onclick={() => open('ch1')}>
-          <span class="next-no display">02</span>
-          <strong>{t('FIFO（同步）', 'FIFO (synchronous)')}</strong>
-          <span>{t('把存储、指针和满空判定拼起来，所有端口共享同一个时钟沿。', 'Storage, pointers and full/empty, with every port sharing one clock edge.')}</span>
-        </button>
-        <button class="next-card" onclick={() => open('ch2')}>
-          <span class="next-no display">03</span>
-          <strong>{t('异步 FIFO', 'Asynchronous FIFO')}</strong>
-          <span>{t('把指针送过两个不同的时钟域：格雷码、两级同步器与保守满空。', 'Send the pointers across two clock domains: Gray code, two-flop synchronisers and conservative flags.')}</span>
-        </button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -392,59 +375,6 @@
 
   .table-wrap .table {
     min-width: 520px;
-  }
-
-  .next {
-    margin-top: 46px;
-  }
-
-  .next-label {
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .next-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 12px;
-  }
-
-  .next-card {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 16px;
-    text-align: left;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
-  }
-
-  .next-card:hover {
-    transform: translateY(-2px);
-    border-color: #d9cfba;
-    box-shadow: var(--shadow-lift);
-  }
-
-  .next-no {
-    font-size: 14px;
-    color: var(--gold);
-  }
-
-  .next-card strong {
-    font-size: 13.5px;
-    font-weight: 600;
-  }
-
-  .next-card span:last-child {
-    font-size: 11.5px;
-    line-height: 1.6;
-    color: var(--ink-3);
   }
 
   @media (max-width: 560px) {
@@ -459,9 +389,4 @@
     }
   }
 
-  @media (max-width: 780px) {
-    .next-grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
 </style>

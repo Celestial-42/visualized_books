@@ -83,7 +83,7 @@
       <p class="lens-text">
         {t(
           '三个实验把后面所有章节的词汇打底：A=B 时翻转选择信号，看组合毛刺；用 D/EN/RST 走两级寄存器，看状态怎样锁在沿上；把异步翻转扫过目的沿，看第一级出现“?”、第二级把它解析成 0/1。',
-          'Three experiments lay the vocabulary for the rest of the book: flip a select with A=B to see a glitch; step a two-stage register with D/EN/RST to see state lock to an edge; sweep an async toggle across a destination edge to see Q1 show “?” and Q2 resolve it to 0/1.'
+          'Three experiments make the concepts tangible: flip a select with A=B to see a glitch; step a two-stage register with D/EN/RST to see state lock to an edge; sweep an async toggle across a destination edge to see Q1 show “?” and Q2 resolve it to 0/1.'
         )}
       </p>
       <span class="lens-go">{t('第 1 章 · 基础知识 →', 'Chapter 1 · foundations →')}</span>
